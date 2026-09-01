@@ -346,6 +346,84 @@
     @apply text-expense;
   }
 
+  .month-pace .section-title,
+  .section-head .section-title {
+    @apply mb-0 flex items-center gap-2;
+  }
+
+  .month-pace .section-title {
+    @apply mb-3;
+  }
+
+  .month-pace__icon {
+    color: var(--primary-color);
+  }
+
+  .month-pace__grid {
+    @apply grid min-w-0 grid-cols-3 gap-2 sm:gap-3;
+  }
+
+  .month-pace__item {
+    @apply flex min-w-0 flex-col gap-1 rounded-control px-2 py-2.5 sm:px-3;
+    background: color-mix(in srgb, var(--primary-color) 8%, var(--bg));
+  }
+
+  .month-pace__item:nth-child(2) {
+    background: color-mix(in srgb, var(--income) 14%, var(--bg));
+  }
+
+  .month-pace__item:nth-child(3) {
+    background: color-mix(in srgb, var(--expense) 12%, var(--bg));
+  }
+
+  .month-pace__label {
+    @apply text-[0.68rem] font-extrabold uppercase tracking-wider text-fg-muted;
+  }
+
+  .month-pace__value {
+    @apply font-extrabold tracking-tight;
+    overflow-wrap: anywhere;
+    font-size: clamp(0.72rem, 3.4vw, 0.95rem);
+  }
+
+  .month-pace__value--income {
+    @apply text-income;
+  }
+
+  .month-pace__value--expense {
+    @apply text-expense;
+  }
+
+  .month-pace__hint {
+    @apply mt-3 mb-0 text-sm leading-relaxed;
+  }
+
+  .month-pace__hint--alert {
+    color: var(--warning);
+  }
+
+  .month-pace__hint--ok {
+    color: var(--success);
+  }
+
+  .section-head {
+    @apply mb-3 flex min-w-0 items-center justify-between gap-3;
+  }
+
+  .section-head__link {
+    @apply shrink-0 text-sm font-bold no-underline;
+    color: var(--primary-color);
+  }
+
+  .recent-movements__list {
+    @apply m-0 flex list-none flex-col gap-2 p-0;
+  }
+
+  .recent-movements__list .movement-card,
+  .day-group .movement-card:last-child {
+    @apply mb-0;
+  }
+
   .category-list {
     @apply flex list-none flex-col gap-1;
   }
@@ -474,6 +552,51 @@
     @apply mb-2;
   }
 
+  .movements-toolbar .form-group {
+    @apply gap-1.5;
+  }
+
+  .movements-search {
+    @apply relative;
+  }
+
+  .movements-search__icon {
+    @apply pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-fg-muted;
+  }
+
+  .category-chips__label {
+    @apply mb-1.5 text-sm font-semibold text-fg-muted;
+  }
+
+  .category-chips {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .chip {
+    @apply min-h-9 max-w-full cursor-pointer truncate rounded-full border border-border px-3 py-1.5 text-sm font-bold text-fg;
+    background: color-mix(in srgb, var(--primary-color) 8%, var(--bg));
+    transition: background var(--transition), color var(--transition), border-color var(--transition), box-shadow var(--transition);
+  }
+
+  .chip--active {
+    color: #fff;
+    border-color: transparent;
+    background: var(--hero-grad);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25), 0 8px 18px color-mix(in srgb, var(--primary-color) 32%, transparent);
+  }
+
+  .day-groups {
+    @apply flex min-w-0 flex-col gap-4;
+  }
+
+  .day-group__title {
+    @apply mb-2 text-[0.72rem] font-extrabold tracking-wider text-fg-muted uppercase;
+  }
+
+  .movements-filter-empty .empty-state {
+    padding-block: 1.75rem;
+  }
+
   /* —— Formularios —— */
   .movement-form,
   .form-group {
@@ -501,6 +624,10 @@
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 22%, transparent);
+  }
+
+  .movements-search input {
+    padding-left: 2.75rem;
   }
 
   .form-group input[aria-invalid='true'],
@@ -911,12 +1038,20 @@
   }
 
   .task-list {
-    @apply mt-3 flex list-decimal flex-col gap-1.5 pl-5 text-sm text-fg-muted;
+    @apply mt-3 flex list-decimal flex-col gap-2.5 pl-5 text-sm text-fg-muted;
   }
 
-  .teammate-task {
+  .task-list strong {
+    color: var(--text);
+  }
+
+  .improvements-card {
     border-left: 3px solid var(--primary-color);
     background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 14%, var(--bg-card)), var(--bg-card));
+  }
+
+  .settings-console-note {
+    @apply mt-4 text-xs leading-relaxed;
   }
 
   .settings-notif-status {
@@ -1511,6 +1646,8 @@
 .logout-btn:focus-visible,
 .voice-btn:focus-visible,
 .segmented__btn:focus-visible,
+.chip:focus-visible,
+.section-head__link:focus-visible,
 .landing-nav__brand:focus-visible,
 .landing-nav__login:focus-visible,
 .app-sidebar__brand:focus-visible,
@@ -1579,6 +1716,15 @@
 
   .segmented__btn:hover:not(.segmented__btn--active) {
     color: var(--text);
+  }
+
+  .chip:hover:not(.chip--active) {
+    border-color: var(--primary-color);
+    color: var(--text);
+  }
+
+  .section-head__link:hover {
+    text-decoration: underline;
   }
 
   .theme-option:hover,
@@ -1788,6 +1934,10 @@
   }
 
   .month-summary__value {
+    @apply text-[1.05rem];
+  }
+
+  .month-pace__value {
     @apply text-[1.05rem];
   }
 

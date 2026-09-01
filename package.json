@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "node src/utils/speechParser.test.js && node src/utils/financeRules.test.js"
+    "test": "node src/utils/speechParser.test.js && node src/utils/financeRules.test.js && node src/utils/monthPace.test.js && node src/utils/movementList.test.js"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.2.0",

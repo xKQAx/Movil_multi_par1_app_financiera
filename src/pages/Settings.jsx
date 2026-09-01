@@ -26,6 +26,30 @@ const ACCENT_OPTIONS = [
   { id: 'purple', label: 'Morado' },
 ];
 
+/** Complementos útiles para el parcial que aún no están en la app. Una sola lista. */
+const COMPLEMENTARY_IMPROVEMENTS = [
+  {
+    title: 'Nube y cuenta real',
+    text: 'Sesión y movimientos en Supabase (Auth + Postgres). Es la tarea de la compañera; hoy todo queda en este dispositivo.',
+  },
+  {
+    title: 'App instalable',
+    text: 'PWA con icono en el celular y avisos aunque cierres la pestaña.',
+  },
+  {
+    title: 'Historial por meses',
+    text: 'Cambiar de mes y revisar meses anteriores, no solo el calendario actual.',
+  },
+  {
+    title: 'Exportar movimientos',
+    text: 'Descargar el mes en CSV o PDF para Excel o una entrega.',
+  },
+  {
+    title: 'Tope por categoría',
+    text: 'Límite propio en alimentación, transporte y demás, con alerta al acercarte.',
+  },
+];
+
 export default function Settings() {
   const { preferences, updatePreferences, loadDemoData, clearAllData, notificationPermission, requestNotificationPermission } =
     useFinance();
@@ -197,31 +221,22 @@ export default function Settings() {
         <LogoutButton variant="block" />
       </section>
 
-      <section className="settings-section card teammate-task">
-        <h2 className="section-title">Tarea pendiente — Compañera</h2>
-        <p>
-          <strong>Conectar Supabase</strong> (autenticación y persistencia en la nube). El gráfico
-          de categorías y el pulido de UI de este parcial ya están en la app.
+      <section className="settings-section card improvements-card">
+        <h2 className="section-title">Mejoras complementarias</h2>
+        <p className="text-muted">
+          Lo esencial del parcial ya está. Estos cinco extras vendrían después.
         </p>
         <ol className="task-list">
-          <li>
-            Crear el proyecto Supabase y las tablas <code>profiles</code>, <code>movements</code> y{' '}
-            <code>preferences</code>, con RLS por usuario autenticado.
-          </li>
-          <li>
-            Reemplazar el login local (<code>AuthContext</code> + <code>localStorage</code>) por
-            Supabase Auth (<code>signInWithPassword</code> / <code>signUp</code>). Stub en{' '}
-            <code>src/lib/supabase.js</code>.
-          </li>
-          <li>
-            Persistir movimientos y preferencias en Postgres (hoy viven en <code>localStorage</code>{' '}
-            por usuario).
-          </li>
-          <li>
-            (Opcional) PWA con service worker para notificaciones en segundo plano. No hace falta
-            si el banner in-app + Notification API con gesto ya cubren la demo.
-          </li>
+          {COMPLEMENTARY_IMPROVEMENTS.map((item) => (
+            <li key={item.title}>
+              <strong>{item.title}.</strong> {item.text}
+            </li>
+          ))}
         </ol>
+        <p className="text-muted settings-console-note">
+          Un error de consola con <code>startTime</code> / <code>reportAllChanges</code> suele
+          venir de una extensión o DevTools (web-vitals), no de esta app, y no la rompe.
+        </p>
       </section>
 
       <ConfirmDialog

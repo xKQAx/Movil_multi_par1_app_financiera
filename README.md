@@ -91,16 +91,17 @@ Ejemplos: “Gasté ocho mil pesos en transporte”, “Recibí 200 mil de mesad
 
 La primera vez **descarga el reconocedor (mejor modelo, ~75 MB)** desde Hugging Face (hace falta internet esa vez) y lo deja en la caché del navegador. Las siguientes veces reutiliza esa caché. Si no hay WebGPU, corre en WASM (más lento; la UI lo avisa). Puedes escribir el movimiento a mano si niegas el micrófono o si la transcripción falla. El botón pasa a **Reintentar**.
 
-## Tarea pendiente — Compañera
+## Mejoras complementarias
 
-No hace falta instalar `@supabase/supabase-js` hasta que ella lo conecte. Hay un stub en `src/lib/supabase.js`. **No conectar Supabase en este parcial.**
+La misma lista de 5 aparece en **Ajustes**. No están implementadas (y **no conectar Supabase en este parcial**). Stub en `src/lib/supabase.js`.
 
-1. Crear proyecto Supabase y tablas `profiles`, `movements`, `preferences` con RLS
-2. Reemplazar `AuthContext` local por Supabase Auth (`signInWithPassword` / `signUp`)
-3. Persistir movimientos y preferencias en Postgres
-4. (Opcional) PWA con service worker
+1. Nube y cuenta real (Supabase Auth + Postgres) — tarea de la compañera
+2. App instalable (PWA) y avisos en segundo plano
+3. Historial por meses (cambiar de mes, no solo el actual)
+4. Exportar movimientos (CSV / PDF)
+5. Tope de presupuesto por categoría, con alerta propia
 
-El gráfico de gastos por categoría y el pulido de UI de este parcial **ya están** en la app.
+Si en la consola ves `Cannot read properties of undefined (reading 'startTime')` en `reportAllChanges`, suele ser una extensión o DevTools (web-vitals / CLS), no esta app: no hay `PerformanceObserver` ni `web-vitals` en el código.
 
 ## Tecnologías
 
@@ -109,4 +110,4 @@ El gráfico de gastos por categoría y el pulido de UI de este parcial **ya est�
 - react-router-dom
 - lucide-react
 - `@huggingface/transformers` (Whisper **base**, transcripción en el cliente)
-- localStorage (Supabase pendiente — compañera)
+- localStorage (nube / Supabase: ver Mejoras complementarias)

@@ -9,7 +9,7 @@
  * 2. Crear `.env` con VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY (nunca subir secrets)
  * 3. Descomentar createClient y usarlo desde AuthContext / FinanceContext
  * 4. Tablas sugeridas: profiles, movements, preferences — con RLS por auth.uid()
- * 5. (Opcional) PWA + service worker para notificaciones en segundo plano
+ * La PWA y el resto de extras están listados en Ajustes → Mejoras complementarias.
  */
 export function createSupabaseClient() {
   // import { createClient } from '@supabase/supabase-js';

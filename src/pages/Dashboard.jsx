@@ -6,6 +6,8 @@ import AlertCard from '../components/AlertCard';
 import CategoryChart from '../components/CategoryChart';
 import EmptyState from '../components/EmptyState';
 import MonthSummary from '../components/MonthSummary';
+import MonthPace from '../components/MonthPace';
+import RecentMovements from '../components/RecentMovements';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency } from '../utils/formatCurrency';
 import { ROUTES } from '../utils/constants';
@@ -77,6 +79,7 @@ export default function Dashboard() {
 
       <div className="dashboard__panels">
         <MonthSummary />
+        <MonthPace />
 
         <section className="category-summary card">
           <h2 className="section-title">Gastos por categoría</h2>
@@ -103,6 +106,8 @@ export default function Dashboard() {
             </>
           )}
         </section>
+
+        <RecentMovements />
       </div>
     </div>
   );

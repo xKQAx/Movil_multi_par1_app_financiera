@@ -1,7 +1,13 @@
 import { formatCurrency, formatShortDate } from '../utils/formatCurrency';
 import { CATEGORY_EMOJIS } from '../utils/constants';
 
-export default function MovementCard({ movement, onEdit, onDelete, showActions = false }) {
+export default function MovementCard({
+  movement,
+  onEdit,
+  onDelete,
+  showActions = false,
+  showDate = true,
+}) {
   const isIncome = movement.type === 'income';
   const emoji = CATEGORY_EMOJIS[movement.category] || '📌';
 
@@ -13,7 +19,7 @@ export default function MovementCard({ movement, onEdit, onDelete, showActions =
       <div className="movement-card__info">
         <p className="movement-card__description">{movement.description}</p>
         <p className="movement-card__meta">
-          {movement.category} · {formatShortDate(movement.date)}
+          {showDate ? `${movement.category} · ${formatShortDate(movement.date)}` : movement.category}
         </p>
       </div>
       <div className="movement-card__right">

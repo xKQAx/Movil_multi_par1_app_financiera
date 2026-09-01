@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Search } from 'lucide-react';
 import Header from '../components/Header';
 import MovementCard from '../components/MovementCard';
 import EmptyState from '../components/EmptyState';
@@ -9,6 +10,12 @@ import MonthSummary from '../components/MonthSummary';
 import { useFinance } from '../context/FinanceContext';
 import { useToast } from '../hooks/useToast';
 import { ROUTES } from '../utils/constants';
+import {
+  filterMovementsList,
+  formatDayHeading,
+  groupMovementsByDate,
+  uniqueCategories,
+} from '../utils/movementList';
 
 const TYPE_FILTERS = [
   { id: 'all', label: 'Todos' },
@@ -23,13 +30,30 @@ export default function Movements() {
   const [editingMovement, setEditingMovement] = useState(null);
   const [deletingMovement, setDeletingMovement] = useState(null);
   const [typeFilter, setTypeFilter] = useState('all');
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState('');
 
-  const incomes = monthMovements.filter((m) => m.type === 'income');
-  const expenses = monthMovements.filter((m) => m.type === 'expense');
-  const showIncomes = typeFilter !== 'expense';
-  const showExpenses = typeFilter !== 'income';
+  const typeFiltered = useMemo(
+    () => filterMovementsList(monthMovements, { type: typeFilter }),
+    [monthMovements, typeFilter]
+  );
+  const categories = useMemo(() => uniqueCategories(typeFiltered), [typeFiltered]);
+  const visibleMovements = useMemo(
+    () => filterMovementsList(typeFiltered, { query, category }),
+    [typeFiltered, query, category]
+  );
+  const dayGroups = useMemo(
+    () => groupMovementsByDate(visibleMovements),
+    [visibleMovements]
+  );
 
   const isIncome = (movement) => movement?.type === 'income';
+  const hasActiveFilters = typeFilter !== 'all' || query.trim() !== '' || category !== '';
+
+  const handleTypeFilter = (id) => {
+    setTypeFilter(id);
+    setCategory('');
+  };
 
   const handleDelete = () => {
     if (!deletingMovement) return;
@@ -100,7 +124,7 @@ export default function Movements() {
                 key={filter.id}
                 type="button"
                 className={`segmented__btn${typeFilter === filter.id ? ' segmented__btn--active' : ''}`}
-                onClick={() => setTypeFilter(filter.id)}
+                onClick={() => handleTypeFilter(filter.id)}
                 aria-pressed={typeFilter === filter.id}
               >
                 {filter.label}
@@ -108,45 +132,86 @@ export default function Movements() {
             ))}
           </div>
 
-          <div className="movements-page__grid">
-            {showIncomes && (
-              <section className="movements-section">
-                <h2 className="section-title section-title--income">Ingresos</h2>
-                {incomes.length === 0 ? (
-                  <p className="text-muted">No hay ingresos este mes. Los gastos se validan contra este total.</p>
-                ) : (
-                  incomes.map((m) => (
-                    <MovementCard
-                      key={m.id}
-                      movement={m}
-                      showActions
-                      onEdit={setEditingMovement}
-                      onDelete={setDeletingMovement}
-                    />
-                  ))
-                )}
-              </section>
-            )}
+          <form
+            className="movements-toolbar"
+            role="search"
+            onSubmit={(event) => event.preventDefault()}
+          >
+            <div className="form-group">
+              <label htmlFor="movements-query">Buscar</label>
+              <div className="movements-search">
+                <Search size={18} className="movements-search__icon" aria-hidden="true" />
+                <input
+                  id="movements-query"
+                  type="search"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Descripción o categoría"
+                  autoComplete="off"
+                />
+              </div>
+            </div>
+          </form>
 
-            {showExpenses && (
-              <section className="movements-section">
-                <h2 className="section-title section-title--expense">Egresos</h2>
-                {expenses.length === 0 ? (
-                  <p className="text-muted">No hay egresos este mes.</p>
-                ) : (
-                  expenses.map((m) => (
+          <div>
+            <p id="category-filter-label" className="category-chips__label">
+              Categoría
+            </p>
+            <div className="category-chips" role="group" aria-labelledby="category-filter-label">
+              <button
+                type="button"
+                className={`chip${category === '' ? ' chip--active' : ''}`}
+                onClick={() => setCategory('')}
+                aria-pressed={category === ''}
+              >
+                Todas
+              </button>
+              {categories.map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  className={`chip${category === name ? ' chip--active' : ''}`}
+                  onClick={() => setCategory(name)}
+                  aria-pressed={category === name}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {visibleMovements.length === 0 ? (
+            <div className="movements-filter-empty card">
+              <EmptyState
+                title="Sin coincidencias"
+                message={
+                  hasActiveFilters
+                    ? 'No hay movimientos con esa búsqueda o categoría. Prueba otro texto o elige Todas.'
+                    : 'No hay movimientos para este filtro.'
+                }
+              />
+            </div>
+          ) : (
+            <div className="day-groups">
+              {dayGroups.map((group) => (
+                <section key={group.date || 'sin-fecha'} className="day-group" aria-labelledby={`day-${group.date}`}>
+                  <h3 id={`day-${group.date}`} className="day-group__title">
+                    {formatDayHeading(group.date)}
+                  </h3>
+                  {group.items.map((movement) => (
                     <MovementCard
-                      key={m.id}
-                      movement={m}
+                      key={movement.id}
+                      movement={movement}
                       showActions
+                      showDate={false}
                       onEdit={setEditingMovement}
                       onDelete={setDeletingMovement}
                     />
-                  ))
-                )}
-              </section>
-            )}
-          </div>
+                  ))}
+                </section>
+              ))}
+            </div>
+          )}
         </>
       )}
 
