@@ -1,11 +1,6 @@
 import { NavLink } from 'react-router-dom';
-import { Home, List, Settings } from 'lucide-react';
-
-const NAV_ITEMS = [
-  { to: '/', icon: Home, label: 'Inicio' },
-  { to: '/movimientos', icon: List, label: 'Movimientos' },
-  { to: '/ajustes', icon: Settings, label: 'Ajustes' },
-];
+import { ROUTES } from '../utils/constants';
+import { NAV_ITEMS } from './navItems';
 
 export default function BottomNavigation() {
   return (
@@ -14,7 +9,7 @@ export default function BottomNavigation() {
         <NavLink
           key={to}
           to={to}
-          end={to === '/'}
+          end={to === ROUTES.dashboard}
           className={({ isActive }) =>
             `bottom-nav__item${isActive ? ' bottom-nav__item--active' : ''}`
           }

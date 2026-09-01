@@ -1,158 +1,84 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Mic, MicOff, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams, Navigate } from 'react-router-dom';
 import Header from '../components/Header';
 import MovementForm from '../components/MovementForm';
-import { parseSpeechCommand, isSpeechRecognitionSupported } from '../utils/speechParser';
+import VoiceCapture from '../components/VoiceCapture';
+import { categoryForType } from '../utils/speechParser';
+import { ADD_MOVEMENT_TYPES, ROUTES } from '../utils/constants';
+import { getTodayISO } from '../utils/formatCurrency';
+import { useToast } from '../hooks/useToast';
+
+const TITLES = {
+  ingreso: 'Registrar ingreso',
+  gasto: 'Registrar gasto',
+  voz: 'Registrar por voz',
+};
 
 export default function AddMovement() {
   const { type } = useParams();
   const navigate = useNavigate();
-  const [toast, setToast] = useState('');
-  const [listening, setListening] = useState(false);
-  const [recognizedText, setRecognizedText] = useState('');
-  const [voiceError, setVoiceError] = useState('');
-  const [parsedData, setParsedData] = useState(null);
-  const recognitionRef = useRef(null);
+  const { showToast } = useToast();
+  const [voiceFill, setVoiceFill] = useState(null);
 
   const isVoice = type === 'voz';
-  const movementType = type === 'ingreso' ? 'income' : 'expense';
-  const titles = {
-    ingreso: 'Registrar ingreso',
-    gasto: 'Registrar gasto',
-    voz: 'Registrar por voz',
-  };
+  const routeType = type === 'ingreso' ? 'income' : 'expense';
+  const [formType, setFormType] = useState(isVoice ? 'expense' : routeType);
 
   useEffect(() => {
-    return () => {
-      recognitionRef.current?.stop();
-    };
-  }, []);
+    setVoiceFill(null);
+    setFormType(isVoice ? 'expense' : routeType);
+  }, [isVoice, routeType]);
 
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(''), 3000);
-  };
+  if (!ADD_MOVEMENT_TYPES.includes(type)) {
+    return <Navigate to={ROUTES.dashboard} replace />;
+  }
 
   const handleSuccess = (movType) => {
-    const msg = movType === 'income' ? 'Ingreso registrado correctamente ✓' : 'Gasto registrado ✓';
+    const msg = movType === 'income' ? 'Ingreso registrado ✓' : 'Gasto registrado ✓';
     showToast(msg);
-    setTimeout(() => navigate('/'), 800);
+    navigate(ROUTES.dashboard);
   };
 
-  const startListening = () => {
-    setVoiceError('');
-    setRecognizedText('');
-
-    if (!isSpeechRecognitionSupported()) {
-      setVoiceError('El reconocimiento de voz no está disponible en este navegador.');
-      return;
-    }
-
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'es-CO';
-    recognition.continuous = false;
-    recognition.interimResults = true;
-    recognitionRef.current = recognition;
-
-    recognition.onstart = () => setListening(true);
-
-    recognition.onresult = (event) => {
-      const transcript = Array.from(event.results)
-        .map((r) => r[0].transcript)
-        .join('');
-      setRecognizedText(transcript);
-
-      if (event.results[0].isFinal) {
-        const result = parseSpeechCommand(transcript);
-        if (result.success) {
-          setParsedData(result.data);
-        } else {
-          setVoiceError(
-            result.error || 'No pudimos entender el comando. Intenta nuevamente o ingresa los datos manualmente.'
-          );
-          if (result.partial) setParsedData(result.partial);
-        }
-      }
-    };
-
-    recognition.onerror = () => {
-      setVoiceError('No pudimos entender el comando. Intenta nuevamente o ingresa los datos manualmente.');
-      setListening(false);
-    };
-
-    recognition.onend = () => setListening(false);
-
-    recognition.start();
+  const applyVoiceResult = (result) => {
+    if (!result?.data) return;
+    const data = result.data;
+    setFormType(data.type);
+    setVoiceFill({
+      type: data.type,
+      description: data.description,
+      category: categoryForType(data.category, data.type),
+      amount: data.amount,
+      date: getTodayISO(),
+      _stamp: Date.now(),
+    });
   };
-
-  const stopListening = () => {
-    recognitionRef.current?.stop();
-    setListening(false);
-  };
-
-  const voiceInitialData = useMemo(() => {
-    if (!parsedData) return null;
-    return {
-      description: parsedData.description,
-      category: parsedData.category,
-      amount: parsedData.amount,
-    };
-  }, [parsedData]);
 
   return (
-    <div className="page add-movement-page">
-      <Header subtitle={titles[type] || 'Registrar movimiento'} />
-
-      {toast && <div className="toast toast--success" role="status">{toast}</div>}
+    <div className="page add-movement-page page--narrow">
+      <Header subtitle={TITLES[type] || 'Registrar movimiento'} />
 
       {isVoice && (
-        <section className="voice-section card">
-          <button
-            type="button"
-            className={`voice-btn${listening ? ' voice-btn--listening' : ''}`}
-            onClick={listening ? stopListening : startListening}
-            aria-label={listening ? 'Detener escucha' : 'Iniciar reconocimiento de voz'}
-          >
-            {listening ? (
-              <>
-                <Loader2 size={32} className="spin" aria-hidden="true" />
-                Escuchando...
-              </>
-            ) : (
-              <>
-                <Mic size={32} aria-hidden="true" />
-                Toca para hablar
-              </>
-            )}
-          </button>
-
-          {listening && (
-            <div className="voice-indicator" aria-live="polite">
-              <MicOff size={16} aria-hidden="true" />
-              <span>La aplicación está escuchando...</span>
-            </div>
-          )}
-
-          {recognizedText && (
-            <p className="voice-text">
-              <strong>Texto reconocido:</strong> "{recognizedText}"
-            </p>
-          )}
-
-          {voiceError && (
-            <div className="form-alert form-alert--error" role="alert">{voiceError}</div>
-          )}
-        </section>
+        <>
+          <p className="text-muted voice-help">
+            Toca <strong>Grabar</strong> y habla con naturalidad: verás el texto en vivo
+            («Grabando — te escucho»). Ejemplo: “gasté ocho mil pesos en transporte”.
+            Al <strong>Detener</strong> se transcribe el audio completo y se rellena el formulario.
+            La primera vez descarga el reconocedor (~75 MB); las siguientes usa la caché.
+          </p>
+          <VoiceCapture variant="hero" onParsed={applyVoiceResult} />
+        </>
       )}
 
       <div className="card">
         <MovementForm
-          type={parsedData?.type || (isVoice ? 'expense' : movementType)}
-          initialData={voiceInitialData}
+          key={type}
+          type={formType}
+          initialData={voiceFill}
+          enableVoice={!isVoice}
+          allowTypeChange={isVoice}
+          onTypeChange={setFormType}
           onSuccess={handleSuccess}
-          onCancel={() => navigate('/')}
+          onCancel={() => navigate(ROUTES.dashboard)}
         />
       </div>
     </div>

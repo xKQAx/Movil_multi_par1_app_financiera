@@ -11,6 +11,8 @@ export default function BalanceCard() {
 
   return (
     <section className="balance-card" aria-label="Resumen de saldo">
+      <span className="balance-card__glow" aria-hidden="true" />
+      <span className="balance-card__sheen" aria-hidden="true" />
       <p className="balance-card__label">Saldo disponible</p>
       <p className="balance-card__amount">{formatCurrency(balance)}</p>
 

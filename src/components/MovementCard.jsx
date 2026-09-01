@@ -20,15 +20,25 @@ export default function MovementCard({ movement, onEdit, onDelete, showActions =
         <p className={`movement-card__amount movement-card__amount--${movement.type}`}>
           {isIncome ? '+' : '−'}{formatCurrency(movement.amount)}
         </p>
-        {showActions && !isIncome && (
+        {showActions && (
           <div className="movement-card__actions">
             {onEdit && (
-              <button type="button" className="btn btn--ghost btn--sm" onClick={() => onEdit(movement)}>
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                onClick={() => onEdit(movement)}
+                aria-label={`Editar ${movement.description}`}
+              >
                 Editar
               </button>
             )}
             {onDelete && (
-              <button type="button" className="btn btn--ghost btn--sm btn--danger" onClick={() => onDelete(movement)}>
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm btn--danger"
+                onClick={() => onDelete(movement)}
+                aria-label={`Eliminar ${movement.description}`}
+              >
                 Eliminar
               </button>
             )}

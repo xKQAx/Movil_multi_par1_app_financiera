@@ -2,15 +2,16 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 
 /**
  * Hook reutilizable para persistir estado en localStorage.
- * initialValue se captura una sola vez (useRef) para evitar bucles
- * cuando se pasa un objeto/array inline en cada render.
+ * Si cambia `key` (p. ej. otro usuario), relee en el mismo render para no
+ * mostrar datos del usuario anterior.
  */
 export function useLocalStorage(key, initialValue) {
   const initialValueRef = useRef(initialValue);
+  initialValueRef.current = initialValue;
 
-  const readValue = useCallback(() => {
+  const readForKey = (storageKey) => {
     try {
-      const item = window.localStorage.getItem(key);
+      const item = window.localStorage.getItem(storageKey);
       if (item !== null) {
         return JSON.parse(item);
       }
@@ -18,33 +19,26 @@ export function useLocalStorage(key, initialValue) {
     } catch {
       return initialValueRef.current;
     }
-  }, [key]);
+  };
 
-  const [storedValue, setStoredValue] = useState(() => {
-    try {
-      const item = window.localStorage.getItem(key);
-      if (item !== null) {
-        return JSON.parse(item);
-      }
-      return initialValueRef.current;
-    } catch {
-      return initialValueRef.current;
-    }
-  });
+  const [state, setState] = useState(() => ({
+    key,
+    value: readForKey(key),
+  }));
 
-  // Re-sincronizar solo cuando cambia la clave de almacenamiento
-  useEffect(() => {
-    setStoredValue(readValue());
-  }, [key, readValue]);
+  if (state.key !== key) {
+    setState({ key, value: readForKey(key) });
+  }
 
-  // Sincronizar cambios desde otras pestañas
+  const storedValue = state.key === key ? state.value : readForKey(key);
+
   useEffect(() => {
     const handleStorageChange = (event) => {
       if (event.key !== key || event.newValue === null) return;
       try {
-        setStoredValue(JSON.parse(event.newValue));
+        setState({ key, value: JSON.parse(event.newValue) });
       } catch {
-        setStoredValue(initialValueRef.current);
+        setState({ key, value: initialValueRef.current });
       }
     };
 
@@ -55,10 +49,11 @@ export function useLocalStorage(key, initialValue) {
   const setValue = useCallback(
     (value) => {
       try {
-        setStoredValue((prev) => {
-          const valueToStore = value instanceof Function ? value(prev) : value;
+        setState((prev) => {
+          const current = prev.key === key ? prev.value : readForKey(key);
+          const valueToStore = value instanceof Function ? value(current) : value;
           window.localStorage.setItem(key, JSON.stringify(valueToStore));
-          return valueToStore;
+          return { key, value: valueToStore };
         });
       } catch (error) {
         console.error(`Error guardando en localStorage [${key}]:`, error);

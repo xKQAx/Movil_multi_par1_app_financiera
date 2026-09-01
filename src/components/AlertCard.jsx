@@ -36,7 +36,9 @@ export default function AlertCard() {
 
   return (
     <section className={`alert-card ${config.className}`} aria-live="polite">
-      <Icon size={28} className="alert-card__icon" aria-hidden="true" />
+      <span className="alert-card__icon-wrap" aria-hidden="true">
+        <Icon size={22} />
+      </span>
       <div>
         <h2 className="alert-card__title">{config.title}</h2>
         <p className="alert-card__subtitle">{config.subtitle}</p>

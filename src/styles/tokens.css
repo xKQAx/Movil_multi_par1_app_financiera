@@ -1,0 +1,134 @@
+/* Tokens de runtime: App.jsx setea --primary-* y data-theme; @theme inline los expone a Tailwind. */
+
+:root {
+  --primary-color: #3b82f6;
+  --primary-dark: #2563eb;
+  --primary-light: #dbeafe;
+
+  --bg: color-mix(in srgb, var(--primary-color) 7%, #f3f5fb);
+  --bg-card: #ffffff;
+  --text: #0b1220;
+  --text-muted: #5a6b82;
+  --border: color-mix(in srgb, var(--primary-color) 10%, #e2e8f0);
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --income: #16a34a;
+  --expense: #dc2626;
+
+  --radius: 18px;
+  --radius-sm: 12px;
+  --radius-hero: 28px;
+  --shadow:
+    0 1px 1px rgb(15 23 42 / 0.04),
+    0 8px 24px rgb(15 23 42 / 0.06),
+    0 0 0 1px color-mix(in srgb, var(--primary-color) 6%, transparent);
+  --shadow-lift:
+    0 12px 28px rgb(15 23 42 / 0.1),
+    0 24px 48px color-mix(in srgb, var(--primary-color) 16%, transparent);
+  --glow: 0 18px 48px color-mix(in srgb, var(--primary-color) 32%, transparent);
+  --hero-grad: linear-gradient(
+    148deg,
+    color-mix(in srgb, var(--primary-color) 72%, white) 0%,
+    var(--primary-color) 46%,
+    var(--primary-dark) 100%
+  );
+  --mesh:
+    radial-gradient(ellipse 90% 55% at 8% -8%, color-mix(in srgb, var(--primary-color) 28%, transparent), transparent 52%),
+    radial-gradient(ellipse 70% 48% at 100% 0%, color-mix(in srgb, var(--primary-color) 18%, transparent), transparent 48%),
+    radial-gradient(ellipse 50% 36% at 70% 100%, color-mix(in srgb, var(--primary-color) 12%, transparent), transparent 55%);
+  --nav-height: 72px;
+  --content-max: 1520px;
+  --landing-max: 1120px;
+  --form-max: 440px;
+  --sidebar-width: 220px;
+  --page-pad: 1rem;
+  --transition: 0.2s ease;
+
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --bg: color-mix(in srgb, var(--primary-color) 11%, #070b14);
+  --bg-card: color-mix(in srgb, var(--primary-color) 8%, #111827);
+  --text: #f8fafc;
+  --text-muted: #9aa8bc;
+  --border: color-mix(in srgb, var(--primary-color) 18%, #243044);
+  --shadow:
+    0 1px 0 rgb(255 255 255 / 0.04) inset,
+    0 12px 36px rgb(0 0 0 / 0.38),
+    0 0 0 1px color-mix(in srgb, var(--primary-color) 14%, transparent);
+  --shadow-lift:
+    0 16px 40px rgb(0 0 0 / 0.45),
+    0 0 40px color-mix(in srgb, var(--primary-color) 22%, transparent);
+  --glow: 0 20px 56px color-mix(in srgb, var(--primary-color) 42%, transparent);
+  --hero-grad: linear-gradient(
+    148deg,
+    color-mix(in srgb, var(--primary-color) 55%, white) 0%,
+    var(--primary-color) 42%,
+    color-mix(in srgb, var(--primary-dark) 70%, #0b1220) 100%
+  );
+  --mesh:
+    radial-gradient(ellipse 85% 50% at 0% -10%, color-mix(in srgb, var(--primary-color) 38%, transparent), transparent 55%),
+    radial-gradient(ellipse 65% 42% at 100% 0%, color-mix(in srgb, var(--primary-color) 26%, transparent), transparent 50%),
+    radial-gradient(ellipse 55% 40% at 50% 110%, color-mix(in srgb, var(--primary-color) 16%, transparent), transparent 55%);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --color-primary: var(--primary-color);
+  --color-primary-dark: var(--primary-dark);
+  --color-primary-light: var(--primary-light);
+  --color-surface: var(--bg);
+  --color-card: var(--bg-card);
+  --color-fg: var(--text);
+  --color-fg-muted: var(--text-muted);
+  --color-border: var(--border);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-income: var(--income);
+  --color-expense: var(--expense);
+  --radius-card: var(--radius);
+  --radius-control: var(--radius-sm);
+  --shadow-card: var(--shadow);
+}
+
+/* Hover solo con puntero fino: no altera el tap en móvil. */
+@custom-variant hover-fine {
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      @slot;
+    }
+  }
+}
+
+@layer base {
+  html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply min-h-dvh w-full overflow-x-hidden bg-surface font-sans text-fg antialiased;
+    line-height: 1.5;
+    text-rendering: optimizeLegibility;
+    background-image: var(--mesh);
+  }
+
+  #root {
+    @apply min-h-dvh w-full;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--primary-color) 28%, transparent);
+  }
+
+  code {
+    font-size: 0.85em;
+    padding: 0.12em 0.38em;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--primary-color) 12%, var(--bg));
+  }
+}
