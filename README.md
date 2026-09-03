@@ -8,7 +8,8 @@ Necesitas `DATABASE_URL` y `JWT_SECRET` en un archivo `.env` (nunca lo subas a g
 
 ```bash
 npm install
-npm run migrate    # crea las tablas en Neon
+npm run migrate    # crea las tablas en Neon (contra tu .env)
+npm run db:tables  # confirma public.users y cuenta usuarios (sin correos)
 npm run dev:full   # API en :3001 + Vite en :5173
 ```
 
@@ -23,16 +24,32 @@ npm run build   # comprobación de producción (no incluye secretos)
 
 ## Variables de entorno
 
-Solo en **servidor**: `.env` local y el panel de Vercel → Settings → Environment Variables.
+Solo en **servidor**: `.env` local y el panel de Vercel → Settings → Environment Variables (Production, Preview y Development).
 
 | Nombre | Dónde |
 | --- | --- |
 | `DATABASE_URL` | Vercel + `.env`. Connection string de Neon (pooled). **Nunca** `VITE_DATABASE_URL`. |
-| `JWT_SECRET` | Vercel + `.env`. Cadena larga aleatoria para firmar la cookie de sesión. |
+| `JWT_SECRET` | **Obligatorio en Vercel** (mínimo 16 caracteres). En local, si falta, hay fallback solo en desarrollo. |
 
-Después de ponerlas en Vercel, vuelve a hacer **Deploy**.
+Si Vercel y local deben compartir el mismo usuario, usa la **misma** `DATABASE_URL`. Si la migración local apuntó a otra rama, corre `npm run migrate` otra vez contra tu `.env`.
+
+Después de crear o cambiar variables en Vercel, haz **Redeploy**. Sin `JWT_SECRET` en producción, el registro puede devolver 409 (el email ya está) pero el **login falla** al firmar la cookie.
+
+Diagnóstico en el deploy: `GET /api/health` responde `{ "db": true/false, "jwtConfigured": true/false }` **sin** exponer la URL.
 
 Las cuentas antiguas de `localStorage` **no se copian** a Neon: crea la cuenta de nuevo en `/registro`.
+
+## No veo tablas en Neon
+
+Un **409** al registrar (“Ya existe una cuenta”) prueba que las tablas **sí existen** en la base a la que apunta Vercel. Si la UI de Neon se ve vacía, casi siempre estás en otro sitio:
+
+1. Consola Neon → el **mismo** proyecto cuya connection string está en `DATABASE_URL`.
+2. Rama que coincida (a menudo `production` o `main`, no solo `development`).
+3. Database `neondb` (o la del connection string).
+4. Schema **public**: tablas `users`, `preferences`, `movements`, `schema_migrations`.
+5. Botón refresh. Las tablas aparecen en **Tables**, no en “Auth” de Neon (Neon no es Supabase Auth).
+
+En local, `npm run db:tables` lista esas tablas y un `count(*)` de usuarios **sin imprimir correos**, contra tu `.env`.
 
 ## Funcionalidades
 
@@ -59,7 +76,7 @@ Las cuentas antiguas de `localStorage` **no se copian** a Neon: crea la cuenta d
 
 ## Autenticación
 
-La sesión es una cookie **httpOnly** (`SameSite=Lax`) emitida por `/api/auth/login` y `/api/auth/register`. El navegador la envía con `credentials: 'include'`. En producción, SPA y `/api` son el mismo origen en Vercel.
+La sesión es una cookie **httpOnly** (`SameSite=Lax; Path=/`; `Secure` en HTTPS/Vercel) emitida por `/api/auth/login` y `/api/auth/register`. No se fija un `Domain` incorrecto. El navegador la envía con `credentials: 'include'`. En producción, SPA y `/api` son el mismo origen en Vercel. `/api/auth/me` responde **401** si no hay cookie (por ejemplo, si el login falló): es normal.
 
 Contraseñas: **bcryptjs** en el servidor. JWT: **jose**.
 

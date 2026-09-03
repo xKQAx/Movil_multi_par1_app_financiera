@@ -1,4 +1,5 @@
 import { handleLogin, handleLogout, handleMe, handleRegister } from './routes/authRoutes.js';
+import { handleHealth } from './routes/healthRoutes.js';
 import {
   handleDemoMovements,
   handleMovementById,
@@ -8,6 +9,7 @@ import { handlePreferences } from './routes/preferenceRoutes.js';
 import { sendJson } from './http.js';
 
 const ROUTES = [
+  { method: 'GET', path: '/api/health', handler: handleHealth },
   { method: 'POST', path: '/api/auth/register', handler: handleRegister },
   { method: 'POST', path: '/api/auth/login', handler: handleLogin },
   { method: 'POST', path: '/api/auth/logout', handler: handleLogout },

@@ -42,6 +42,7 @@ async function main() {
   `;
 
   console.log('Migración 001_init lista (tablas users, preferences, movements).');
+  console.log('Para comprobarlas sin listar correos: npm run db:tables');
 }
 
 main().catch((error) => {

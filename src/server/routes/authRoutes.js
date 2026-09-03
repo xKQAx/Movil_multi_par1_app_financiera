@@ -52,14 +52,14 @@ export async function handleRegister(req, res) {
       ]);
     } catch (error) {
       if (isUniqueViolation(error)) {
-        sendJson(res, 409, { error: 'Este correo ya está registrado.' });
+        sendJson(res, 409, { error: 'Ya existe una cuenta; inicia sesión.' });
         return;
       }
       throw error;
     }
 
     const user = { userId, email, name };
-    setAuthCookie(res, await signAuthToken(user));
+    setAuthCookie(res, await signAuthToken(user), req);
     sendJson(res, 201, { user: toPublicUser(user) });
   });
 }
@@ -95,14 +95,14 @@ export async function handleLogin(req, res) {
     }
 
     const user = { userId: row.id, email: row.email, name: row.name };
-    setAuthCookie(res, await signAuthToken(user));
+    setAuthCookie(res, await signAuthToken(user), req);
     sendJson(res, 200, { user: toPublicUser(user) });
   });
 }
 
 export async function handleLogout(req, res) {
   if (!allowMethods(req, res, ['POST'])) return;
-  clearAuthCookie(res);
+  clearAuthCookie(res, req);
   sendJson(res, 200, { ok: true });
 }
 
@@ -120,7 +120,7 @@ export async function handleMe(req, res) {
       LIMIT 1
     `;
     if (!rows[0]) {
-      clearAuthCookie(res);
+      clearAuthCookie(res, req);
       sendJson(res, 401, { error: 'La cuenta ya no existe.' });
       return;
     }

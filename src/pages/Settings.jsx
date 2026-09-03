@@ -225,6 +225,27 @@ export default function Settings() {
         <LogoutButton variant="block" />
       </section>
 
+      <section className="settings-section card">
+        <h2 className="section-title">Dónde ver tus datos (Neon)</h2>
+        <p className="text-muted">
+          Un registro 409 (correo ya existe) significa que las tablas <strong>sí están</strong>
+          en la base de la connection string. Si la consola de Neon se ve vacía, casi siempre
+          estás en otro proyecto, otra rama o no expandiste el schema <code>public</code>.
+        </p>
+        <ol className="task-list">
+          <li>Abre el <strong>mismo</strong> proyecto Neon cuya connection string está en <code>DATABASE_URL</code>.</li>
+          <li>Elige la rama que coincida (a menudo <code>production</code> o <code>main</code>).</li>
+          <li>Database <code>neondb</code> (o la que aparece en la connection string).</li>
+          <li>Schema <strong>public</strong>: tablas <code>users</code>, <code>preferences</code>, <code>movements</code>, <code>schema_migrations</code>.</li>
+          <li>Pulsa refresh. Las tablas están en <strong>Tables</strong>, no en “Auth” de Neon (Neon no es Supabase Auth).</li>
+        </ol>
+        <p className="text-muted settings-console-note">
+          En local: <code>npm run db:tables</code> confirma las tablas contra tu <code>.env</code>
+          (cuenta usuarios, sin listar correos). Si Vercel y local deben compartir la misma
+          cuenta, usa la misma <code>DATABASE_URL</code> y, si hace falta, <code>npm run migrate</code>.
+        </p>
+      </section>
+
       <section className="settings-section card improvements-card">
         <h2 className="section-title">Mejoras complementarias</h2>
         <p className="text-muted">

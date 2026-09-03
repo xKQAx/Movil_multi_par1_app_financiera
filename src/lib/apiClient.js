@@ -29,9 +29,19 @@ export async function apiFetch(path, options = {}) {
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new ApiError(data.error || 'Error del servidor.', response.status, data);
+    throw new ApiError(messageFromApiBody(data, response.status), response.status, data);
   }
   return data;
+}
+
+function messageFromApiBody(data, status) {
+  if (typeof data?.error === 'string' && data.error.trim()) {
+    return data.error;
+  }
+  if (status >= 500) {
+    return 'Error interno del servidor. Inténtalo de nuevo.';
+  }
+  return 'Error del servidor.';
 }
 
 export function toResultError(error) {

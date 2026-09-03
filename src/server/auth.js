@@ -6,13 +6,39 @@ import { sendJson } from './http.js';
 const COOKIE_NAME = 'cf_auth';
 const TOKEN_MAX_AGE = 60 * 60 * 24 * 7;
 const BCRYPT_ROUNDS = 10;
+const DEV_JWT_FALLBACK = 'dev-only-local-jwt-secret-change-me';
+const JWT_MIN_LENGTH = 16;
+
+export class JwtConfigError extends Error {
+  constructor(message = 'Falta JWT_SECRET en el servidor') {
+    super(message);
+    this.name = 'JwtConfigError';
+    this.status = 503;
+    this.expose = true;
+  }
+}
+
+export function isJwtConfigured() {
+  const secret = process.env.JWT_SECRET;
+  return typeof secret === 'string' && secret.length >= JWT_MIN_LENGTH;
+}
+
+function allowDevJwtFallback() {
+  return process.env.NODE_ENV !== 'production' && process.env.VERCEL !== '1';
+}
+
+function resolveJwtSecret() {
+  if (isJwtConfigured()) return process.env.JWT_SECRET;
+  if (allowDevJwtFallback()) return DEV_JWT_FALLBACK;
+  throw new JwtConfigError('Falta JWT_SECRET en el servidor');
+}
 
 function jwtSecretKey() {
-  const secret = process.env.JWT_SECRET;
-  if (!secret || secret.length < 16) {
-    throw new Error('Falta JWT_SECRET (mínimo 16 caracteres) en el entorno del servidor.');
-  }
-  return new TextEncoder().encode(secret);
+  return new TextEncoder().encode(resolveJwtSecret());
+}
+
+export function assertJwtReady() {
+  resolveJwtSecret();
 }
 
 export async function hashPassword(password) {
@@ -41,11 +67,17 @@ export async function verifyAuthToken(token) {
   };
 }
 
-function cookieSecure() {
-  return process.env.VERCEL === '1';
+function cookieSecure(req) {
+  if (process.env.VERCEL === '1') return true;
+  const proto = req?.headers?.['x-forwarded-proto'];
+  if (typeof proto === 'string') {
+    return proto.split(',')[0].trim() === 'https';
+  }
+  return false;
 }
 
-function serializeAuthCookie(value, maxAge) {
+/** Cookie de sesión: HttpOnly; Path=/; SameSite=Lax; Secure en HTTPS. Sin Domain. */
+export function serializeAuthCookie(value, maxAge, secure) {
   const parts = [
     `${COOKIE_NAME}=${encodeURIComponent(value)}`,
     'HttpOnly',
@@ -53,16 +85,16 @@ function serializeAuthCookie(value, maxAge) {
     'SameSite=Lax',
     `Max-Age=${maxAge}`,
   ];
-  if (cookieSecure()) parts.push('Secure');
+  if (secure) parts.push('Secure');
   return parts.join('; ');
 }
 
-export function setAuthCookie(res, token) {
-  res.setHeader('Set-Cookie', serializeAuthCookie(token, TOKEN_MAX_AGE));
+export function setAuthCookie(res, token, req) {
+  res.setHeader('Set-Cookie', serializeAuthCookie(token, TOKEN_MAX_AGE, cookieSecure(req)));
 }
 
-export function clearAuthCookie(res) {
-  res.setHeader('Set-Cookie', serializeAuthCookie('', 0));
+export function clearAuthCookie(res, req) {
+  res.setHeader('Set-Cookie', serializeAuthCookie('', 0, cookieSecure(req)));
 }
 
 export function readAuthToken(req) {
@@ -74,7 +106,7 @@ export function toPublicUser(user) {
   return { userId: user.userId, email: user.email, name: user.name };
 }
 
-/** Extrae el usuario del JWT o responde 401. */
+/** Extrae el usuario del JWT o responde 401. Sin cookie = 401 (esperado). */
 export async function requireUser(req, res) {
   const token = readAuthToken(req);
   if (!token) {
@@ -88,7 +120,11 @@ export async function requireUser(req, res) {
       return null;
     }
     return user;
-  } catch {
+  } catch (error) {
+    if (error instanceof JwtConfigError || error?.expose) {
+      sendJson(res, error.status || 503, { error: error.message || 'Falta JWT_SECRET en el servidor' });
+      return null;
+    }
     sendJson(res, 401, { error: 'Sesión expirada. Inicia sesión de nuevo.' });
     return null;
   }

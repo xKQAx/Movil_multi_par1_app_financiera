@@ -10,9 +10,13 @@ if (!process.env.DATABASE_URL) {
   console.error('Falta DATABASE_URL en .env (solo servidor, nunca VITE_DATABASE_URL).');
   process.exit(1);
 }
-if (!process.env.JWT_SECRET) {
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 16) {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('Falta JWT_SECRET (mínimo 16 caracteres). En Vercel es obligatorio.');
+    process.exit(1);
+  }
   process.env.JWT_SECRET = 'dev-only-local-jwt-secret-change-me';
-  console.warn('Falta JWT_SECRET en .env. Usando un secreto local de desarrollo; en Vercel debes definir JWT_SECRET.');
+  console.warn('Falta JWT_SECRET en .env. Fallback solo en desarrollo; en Vercel debes definir JWT_SECRET y Redeploy.');
 }
 
 const server = http.createServer((req, res) => {

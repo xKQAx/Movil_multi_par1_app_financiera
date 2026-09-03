@@ -8,10 +8,11 @@
     "dev:api": "node scripts/dev-api.mjs",
     "dev:full": "node scripts/dev-full.mjs",
     "migrate": "node scripts/migrate.mjs",
+    "db:tables": "node scripts/db-tables.mjs",
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "node src/utils/speechParser.test.js && node src/utils/financeRules.test.js && node src/utils/monthPace.test.js && node src/utils/movementList.test.js"
+    "test": "node src/utils/speechParser.test.js && node src/utils/financeRules.test.js && node src/utils/monthPace.test.js && node src/utils/movementList.test.js && node src/server/http.test.js && node src/lib/apiClient.test.js"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.2.0",

@@ -1,5 +1,6 @@
 import { handleMe } from '../../src/server/routes/authRoutes.js';
+import { asVercelHandler } from '../../src/server/vercelHandler.js';
 
 export const config = { runtime: 'nodejs' };
 
-export default handleMe;
+export default asVercelHandler(handleMe);
