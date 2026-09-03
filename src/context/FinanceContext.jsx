@@ -1,6 +1,7 @@
 import { createContext, useContext, useMemo, useEffect, useCallback, useRef, useState } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useAuth } from './AuthContext';
+import { apiFetch, toResultError } from '../lib/apiClient';
 import {
   calculateIncome,
   calculateExpenses,
@@ -12,13 +13,11 @@ import {
   canApplyMovementChange,
   filterMovementsByMonth,
   sortMovementsByDate,
-  generateId,
   BUDGET_STATUS,
 } from '../utils/financeRules';
-import { getMonthYearFromDate, getTodayISO } from '../utils/formatCurrency';
+import { getMonthYearFromDate } from '../utils/formatCurrency';
 import {
   DEFAULT_PREFERENCES,
-  DEMO_MOVEMENTS,
   EMPTY_MOVEMENTS,
   EMPTY_CRITICAL_NOTIFIED,
 } from '../utils/constants';
@@ -33,24 +32,13 @@ function readNotificationPermission() {
 export function FinanceProvider({ children }) {
   const { user } = useAuth();
   const storageSuffix = user?.userId ?? 'guest';
-  const preferencesDefault = useMemo(
-    () => ({
-      ...DEFAULT_PREFERENCES,
-      name: user?.name || DEFAULT_PREFERENCES.name,
-    }),
-    [user?.name]
-  );
 
-  // TODO Compañera: persistir movimientos y preferencias en tablas Supabase
-  // (movements / preferences) con RLS por user_id, en lugar de localStorage.
-  const [movements, setMovements] = useLocalStorage(
-    `cf_movements_${storageSuffix}`,
-    EMPTY_MOVEMENTS
-  );
-  const [preferences, setPreferences] = useLocalStorage(
-    `cf_preferences_${storageSuffix}`,
-    preferencesDefault
-  );
+  const [movements, setMovements] = useState(EMPTY_MOVEMENTS);
+  const [preferences, setPreferences] = useState(DEFAULT_PREFERENCES);
+  const [hydratedUserId, setHydratedUserId] = useState(null);
+  const [loadError, setLoadError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
+
   const [_criticalNotified, setCriticalNotified] = useLocalStorage(
     `cf_critical_notified_${storageSuffix}`,
     EMPTY_CRITICAL_NOTIFIED
@@ -58,13 +46,52 @@ export function FinanceProvider({ children }) {
 
   const [notificationPermission, setNotificationPermission] = useState(readNotificationPermission);
   const osNotifySentRef = useRef({});
+  const persistPrefTimer = useRef(null);
+
+  useEffect(() => () => clearTimeout(persistPrefTimer.current), []);
+
+  const reload = useCallback(() => {
+    setHydratedUserId(null);
+    setLoadError('');
+    setReloadKey((key) => key + 1);
+  }, []);
 
   useEffect(() => {
-    if (!user?.name) return;
-    if (preferences.name === DEFAULT_PREFERENCES.name && user.name !== DEFAULT_PREFERENCES.name) {
-      setPreferences((prev) => ({ ...prev, name: user.name }));
+    if (!user?.userId) {
+      setMovements(EMPTY_MOVEMENTS);
+      setPreferences(DEFAULT_PREFERENCES);
+      setHydratedUserId(null);
+      setLoadError('');
+      return undefined;
     }
-  }, [user?.name, preferences.name, setPreferences]);
+
+    let cancelled = false;
+    setLoadError('');
+
+    (async () => {
+      try {
+        const [movData, prefData] = await Promise.all([
+          apiFetch('/api/movements'),
+          apiFetch('/api/preferences'),
+        ]);
+        if (cancelled) return;
+        setMovements(Array.isArray(movData.movements) ? movData.movements : EMPTY_MOVEMENTS);
+        setPreferences(prefData.preferences || DEFAULT_PREFERENCES);
+        setHydratedUserId(user.userId);
+        setLoadError('');
+      } catch (error) {
+        if (!cancelled) {
+          setLoadError(error.message || 'No se pudieron cargar tus datos.');
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.userId, reloadKey]);
+
+  const isLoading = Boolean(user?.userId) && hydratedUserId !== user.userId && !loadError;
 
   const now = new Date();
   const activeMonth = now.getMonth();
@@ -119,7 +146,6 @@ export function FinanceProvider({ children }) {
     }
   }, []);
 
-  // Intento de Notification API solo si ya hay permiso (sin pedir al montar).
   useEffect(() => {
     if (budgetStatus !== BUDGET_STATUS.CRITICAL) return;
     if (readNotificationPermission() !== 'granted') return;
@@ -166,9 +192,7 @@ export function FinanceProvider({ children }) {
   }, [budgetStatus, monthKey, sendCriticalOsNotification, setCriticalNotified]);
 
   const addMovement = useCallback(
-    (movement) => {
-      const newMovement = { ...movement, id: generateId() };
-
+    async (movement) => {
       if (movement.type === 'expense') {
         const { month, year } = getMonthYearFromDate(movement.date);
         const validation = canAddExpense(movements, month, year, movement.amount);
@@ -177,15 +201,23 @@ export function FinanceProvider({ children }) {
         }
       }
 
-      setMovements((prev) => [...prev, newMovement]);
-      return { success: true, movement: newMovement };
+      try {
+        const data = await apiFetch('/api/movements', {
+          method: 'POST',
+          body: JSON.stringify(movement),
+        });
+        setMovements((prev) => [...prev, data.movement]);
+        return { success: true, movement: data.movement };
+      } catch (error) {
+        return toResultError(error);
+      }
     },
-    [movements, setMovements]
+    [movements]
   );
 
   const updateMovement = useCallback(
-    (id, updates) => {
-      const existing = movements.find((m) => m.id === id);
+    async (id, updates) => {
+      const existing = movements.find((item) => item.id === id);
       if (!existing) return { success: false, reason: 'not_found' };
 
       if (existing.type === 'expense' || updates.type === 'expense') {
@@ -199,57 +231,86 @@ export function FinanceProvider({ children }) {
       }
 
       if (existing.type === 'income') {
-        const next = movements.map((m) => (m.id === id ? { ...m, ...updates } : m));
+        const next = movements.map((item) => (item.id === id ? { ...item, ...updates } : item));
         const balanceCheck = canApplyMovementChange(next, [existing.date, updates.date ?? existing.date]);
         if (!balanceCheck.allowed) {
           return { success: false, ...balanceCheck };
         }
       }
 
-      setMovements((prev) =>
-        prev.map((m) => (m.id === id ? { ...m, ...updates } : m))
-      );
-      return { success: true };
+      try {
+        const data = await apiFetch(`/api/movements/${encodeURIComponent(id)}`, {
+          method: 'PUT',
+          body: JSON.stringify({ ...existing, ...updates }),
+        });
+        setMovements((prev) => prev.map((item) => (item.id === id ? data.movement : item)));
+        return { success: true };
+      } catch (error) {
+        return toResultError(error);
+      }
     },
-    [movements, setMovements]
+    [movements]
   );
 
   const deleteMovement = useCallback(
-    (id) => {
-      const existing = movements.find((m) => m.id === id);
+    async (id) => {
+      const existing = movements.find((item) => item.id === id);
       if (!existing) return { success: false, reason: 'not_found' };
 
       if (existing.type === 'income') {
-        const next = movements.filter((m) => m.id !== id);
+        const next = movements.filter((item) => item.id !== id);
         const balanceCheck = canApplyMovementChange(next, [existing.date]);
         if (!balanceCheck.allowed) {
           return { success: false, ...balanceCheck };
         }
       }
 
-      setMovements((prev) => prev.filter((m) => m.id !== id));
+      try {
+        await apiFetch(`/api/movements/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        setMovements((prev) => prev.filter((item) => item.id !== id));
+        return { success: true };
+      } catch (error) {
+        return toResultError(error);
+      }
+    },
+    [movements]
+  );
+
+  const updatePreferences = useCallback((updates) => {
+    setPreferences((prev) => {
+      const next = { ...prev, ...updates };
+      clearTimeout(persistPrefTimer.current);
+      persistPrefTimer.current = setTimeout(() => {
+        apiFetch('/api/preferences', {
+          method: 'PUT',
+          body: JSON.stringify(next),
+        }).catch(() => {});
+      }, 400);
+      return next;
+    });
+  }, []);
+
+  const loadDemoData = useCallback(async () => {
+    try {
+      const data = await apiFetch('/api/movements/demo', { method: 'POST' });
+      setMovements(Array.isArray(data.movements) ? data.movements : EMPTY_MOVEMENTS);
       return { success: true };
-    },
-    [movements, setMovements]
-  );
+    } catch (error) {
+      return toResultError(error);
+    }
+  }, []);
 
-  const updatePreferences = useCallback(
-    (updates) => {
-      setPreferences((prev) => ({ ...prev, ...updates }));
-    },
-    [setPreferences]
-  );
-
-  const loadDemoData = useCallback(() => {
-    const today = getTodayISO();
-    setMovements(DEMO_MOVEMENTS.map((m) => ({ ...m, id: generateId(), date: today })));
-  }, [setMovements]);
-
-  const clearAllData = useCallback(() => {
-    setMovements([]);
-    setCriticalNotified({});
-    osNotifySentRef.current = {};
-  }, [setMovements, setCriticalNotified]);
+  const clearAllData = useCallback(async () => {
+    try {
+      await apiFetch('/api/movements', { method: 'DELETE' });
+      setMovements(EMPTY_MOVEMENTS);
+      setCriticalNotified({});
+      osNotifySentRef.current = {};
+      return { success: true };
+    } catch (error) {
+      return toResultError(error);
+    }
+  }, [setCriticalNotified]);
 
   const validateExpense = useCallback(
     (amount, excludeId = null, dateStr) => {
@@ -276,6 +337,9 @@ export function FinanceProvider({ children }) {
       activeYear,
       monthKey,
       notificationPermission,
+      isLoading,
+      loadError,
+      reload,
       addMovement,
       updateMovement,
       deleteMovement,
@@ -299,6 +363,9 @@ export function FinanceProvider({ children }) {
       activeYear,
       monthKey,
       notificationPermission,
+      isLoading,
+      loadError,
+      reload,
       addMovement,
       updateMovement,
       deleteMovement,

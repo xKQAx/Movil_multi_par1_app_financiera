@@ -33,14 +33,37 @@ function applyAppearance(isAuthenticated, preferences) {
   root.style.setProperty('--primary-light', accent.primaryLight);
 }
 
+function BootScreen({ message, onRetry }) {
+  return (
+    <div className="page" role="status">
+      <p className="text-muted">{message}</p>
+      {onRetry && (
+        <button type="button" className="btn btn--primary" onClick={onRetry}>
+          Reintentar
+        </button>
+      )}
+    </div>
+  );
+}
+
 function ThemedShell() {
-  const { preferences } = useFinance();
-  const { isAuthenticated } = useAuth();
+  const { preferences, isLoading, loadError, reload } = useFinance();
+  const { isAuthenticated, ready } = useAuth();
   const { theme, accentColor } = preferences;
 
   useLayoutEffect(() => {
     applyAppearance(isAuthenticated, { theme, accentColor });
   }, [isAuthenticated, theme, accentColor]);
+
+  if (!ready) {
+    return <BootScreen message="Comprobando sesión…" />;
+  }
+  if (isAuthenticated && isLoading) {
+    return <BootScreen message="Cargando tus datos…" />;
+  }
+  if (isAuthenticated && loadError) {
+    return <BootScreen message={loadError} onRetry={reload} />;
+  }
 
   return (
     <div className={`app-shell${isAuthenticated ? ' app-shell--auth' : ' app-shell--public'}`}>

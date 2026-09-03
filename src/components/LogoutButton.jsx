@@ -11,8 +11,8 @@ export default function LogoutButton({ variant = 'header' }) {
   const { logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate(ROUTES.landing, { replace: true });
   };
 

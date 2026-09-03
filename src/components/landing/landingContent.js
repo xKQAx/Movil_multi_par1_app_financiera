@@ -1,9 +1,9 @@
-import { Wallet, Bell, Mic, Palette, HardDrive } from 'lucide-react';
+import { Wallet, Bell, Mic, Palette, Cloud } from 'lucide-react';
 
 /** Copy y datos decorativos de la landing (sin FinanceContext). */
 
 export const TRUST_ITEMS = [
-  { icon: HardDrive, label: 'Se guarda en tu dispositivo' },
+  { icon: Cloud, label: 'Se guarda en tu cuenta' },
   { icon: Bell, label: 'Alertas al 30 % y 10 %' },
   { icon: Mic, label: 'Registro por voz' },
   { icon: Palette, label: 'Tema claro u oscuro' },

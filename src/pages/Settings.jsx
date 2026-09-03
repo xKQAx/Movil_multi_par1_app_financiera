@@ -26,12 +26,8 @@ const ACCENT_OPTIONS = [
   { id: 'purple', label: 'Morado' },
 ];
 
-/** Complementos útiles para el parcial que aún no están en la app. Una sola lista. */
+/** Complementos útiles para el parcial que aún no están en la app. */
 const COMPLEMENTARY_IMPROVEMENTS = [
-  {
-    title: 'Nube y cuenta real',
-    text: 'Sesión y movimientos en Supabase (Auth + Postgres). Es la tarea de la compañera; hoy todo queda en este dispositivo.',
-  },
   {
     title: 'App instalable',
     text: 'PWA con icono en el celular y avisos aunque cierres la pestaña.',
@@ -73,13 +69,21 @@ export default function Settings() {
     markSaved();
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (confirmAction === 'demo') {
-      loadDemoData();
-      showToast('Datos de demostración cargados ✓');
+      const result = await loadDemoData();
+      if (!result.success) {
+        showToast(result.error || 'No se pudieron cargar los datos de demostración.', 'error');
+      } else {
+        showToast('Datos de demostración cargados ✓');
+      }
     } else if (confirmAction === 'clear') {
-      clearAllData();
-      showToast('Movimientos eliminados ✓');
+      const result = await clearAllData();
+      if (!result.success) {
+        showToast(result.error || 'No se pudieron eliminar los movimientos.', 'error');
+      } else {
+        showToast('Movimientos eliminados ✓');
+      }
     }
     setConfirmAction(null);
   };
@@ -103,7 +107,7 @@ export default function Settings() {
     <div className="page settings-page">
       <Header subtitle="Ajustes" />
       <p className="settings-saved" role="status" aria-live="polite">
-        {saved ? 'Guardado en este dispositivo' : '\u00a0'}
+        {saved ? 'Guardado en tu cuenta' : '\u00a0'}
       </p>
 
       <section className="settings-section card">
@@ -224,7 +228,8 @@ export default function Settings() {
       <section className="settings-section card improvements-card">
         <h2 className="section-title">Mejoras complementarias</h2>
         <p className="text-muted">
-          Lo esencial del parcial ya está. Estos cinco extras vendrían después.
+          La cuenta, los movimientos y el tema ya viven en Neon (Postgres) a través de la API en
+          Vercel. Estos cuatro extras vendrían después.
         </p>
         <ol className="task-list">
           {COMPLEMENTARY_IMPROVEMENTS.map((item) => (

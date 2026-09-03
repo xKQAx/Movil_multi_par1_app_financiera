@@ -55,13 +55,14 @@ export default function Movements() {
     setCategory('');
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deletingMovement) return;
-    const result = deleteMovement(deletingMovement.id);
+    const result = await deleteMovement(deletingMovement.id);
     if (!result.success) {
       setDeletingMovement(null);
       showToast(
-        'No puedes eliminar este ingreso: los gastos de ese mes quedarían por encima de los ingresos. Reduce o borra egresos primero.',
+        result.error ||
+          'No puedes eliminar este ingreso: los gastos de ese mes quedarían por encima de los ingresos. Reduce o borra egresos primero.',
         'error'
       );
       return;

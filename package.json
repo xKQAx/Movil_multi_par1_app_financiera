@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "node scripts/dev-api.mjs",
+    "dev:full": "node scripts/dev-full.mjs",
+    "migrate": "node scripts/migrate.mjs",
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
@@ -12,6 +15,9 @@
   },
   "dependencies": {
     "@huggingface/transformers": "^4.2.0",
+    "@neondatabase/serverless": "^1.1.0",
+    "bcryptjs": "^3.0.3",
+    "jose": "^6.2.10",
     "lucide-react": "^1.38.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

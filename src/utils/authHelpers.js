@@ -1,4 +1,4 @@
-/** Validación y hashing de autenticación local (SRP: separado del contexto). */
+/** Validación de formularios de autenticación (SRP: separado del contexto). */
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -23,18 +23,6 @@ export function validateRegisterFields({ name, email, password, confirmPassword 
   if (!confirmPassword) errors.confirmPassword = 'Confirma tu contraseña.';
   else if (password !== confirmPassword) errors.confirmPassword = 'Las contraseñas no coinciden.';
   return errors;
-}
-
-/** Hash SHA-256 para demo local. No sustituye un backend seguro. */
-export async function hashPassword(password) {
-  if (globalThis.crypto?.subtle) {
-    const data = new TextEncoder().encode(`cf-local:${password}`);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    return Array.from(new Uint8Array(hashBuffer))
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('');
-  }
-  return `plain:${password}`;
 }
 
 export function createUserId() {

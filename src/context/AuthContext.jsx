@@ -1,90 +1,90 @@
-import { createContext, useContext, useMemo, useCallback } from 'react';
-import { useLocalStorage } from '../hooks/useLocalStorage';
-import { EMPTY_USERS } from '../utils/constants';
-import {
-  hashPassword,
-  createUserId,
-  normalizeEmail,
-  isValidEmail,
-} from '../utils/authHelpers';
-// TODO Compañera: reemplazar este contexto por Supabase Auth (signInWithPassword / signUp)
-// y persistir movimientos en Postgres. Ver stub en src/lib/supabase.js.
+import { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import { apiFetch, toResultError } from '../lib/apiClient';
+import { normalizeEmail, isValidEmail } from '../utils/authHelpers';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [users, setUsers] = useLocalStorage('cf_users', EMPTY_USERS);
-  const [session, setSession] = useLocalStorage('cf_session', null);
+  const [user, setUser] = useState(null);
+  const [ready, setReady] = useState(false);
 
-  const login = useCallback(
-    async (email, password) => {
-      const normalized = normalizeEmail(email);
-      if (!normalized || !password) {
-        return { success: false, error: 'Completa correo y contraseña.' };
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await apiFetch('/api/auth/me');
+        if (!cancelled) setUser(data.user);
+      } catch {
+        if (!cancelled) setUser(null);
+      } finally {
+        if (!cancelled) setReady(true);
       }
-      if (!isValidEmail(normalized)) {
-        return { success: false, error: 'Ingresa un correo válido.' };
-      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-      const passwordHash = await hashPassword(password);
-      const list = Array.isArray(users) ? users : [];
-      const found = list.find(
-        (u) => u.email === normalized && u.passwordHash === passwordHash
-      );
-      if (!found) {
-        return { success: false, error: 'Correo o contraseña incorrectos.' };
-      }
-
-      setSession({ userId: found.id, email: found.email, name: found.name });
+  const login = useCallback(async (email, password) => {
+    const normalized = normalizeEmail(email);
+    if (!normalized || !password) {
+      return { success: false, error: 'Completa correo y contraseña.' };
+    }
+    if (!isValidEmail(normalized)) {
+      return { success: false, error: 'Ingresa un correo válido.' };
+    }
+    try {
+      const data = await apiFetch('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email: normalized, password }),
+      });
+      setUser(data.user);
       return { success: true };
-    },
-    [users, setSession]
-  );
+    } catch (error) {
+      return toResultError(error);
+    }
+  }, []);
 
-  const register = useCallback(
-    async ({ name, email, password }) => {
-      const trimmedName = name?.trim() || '';
-      const normalized = normalizeEmail(email);
+  const register = useCallback(async ({ name, email, password }) => {
+    const trimmedName = name?.trim() || '';
+    const normalized = normalizeEmail(email);
+    if (!trimmedName || !normalized || !password) {
+      return { success: false, error: 'Completa todos los campos.' };
+    }
+    if (!isValidEmail(normalized)) {
+      return { success: false, error: 'Ingresa un correo válido.' };
+    }
+    try {
+      const data = await apiFetch('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ name: trimmedName, email: normalized, password }),
+      });
+      setUser(data.user);
+      return { success: true, user: data.user };
+    } catch (error) {
+      return toResultError(error);
+    }
+  }, []);
 
-      if (!trimmedName || !normalized || !password) {
-        return { success: false, error: 'Completa todos los campos.' };
-      }
-      if (!isValidEmail(normalized)) {
-        return { success: false, error: 'Ingresa un correo válido.' };
-      }
-      const list = Array.isArray(users) ? users : [];
-      if (list.some((u) => u.email === normalized)) {
-        return { success: false, error: 'Este correo ya está registrado.' };
-      }
-
-      const newUser = {
-        id: createUserId(),
-        name: trimmedName,
-        email: normalized,
-        passwordHash: await hashPassword(password),
-        createdAt: new Date().toISOString(),
-      };
-
-      setUsers((prev) => [...(Array.isArray(prev) ? prev : []), newUser]);
-      setSession({ userId: newUser.id, email: newUser.email, name: newUser.name });
-      return { success: true, user: newUser };
-    },
-    [users, setUsers, setSession]
-  );
-
-  const logout = useCallback(() => {
-    setSession(null);
-  }, [setSession]);
+  const logout = useCallback(async () => {
+    try {
+      await apiFetch('/api/auth/logout', { method: 'POST' });
+    } catch {
+      // La cookie puede haber caducado; igual cerramos en cliente.
+    }
+    setUser(null);
+  }, []);
 
   const value = useMemo(
     () => ({
-      user: session,
-      isAuthenticated: Boolean(session?.userId),
+      user,
+      ready,
+      isAuthenticated: Boolean(user?.userId),
       login,
       register,
       logout,
     }),
-    [session, login, register, logout]
+    [user, ready, login, register, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

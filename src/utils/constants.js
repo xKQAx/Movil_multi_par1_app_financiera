@@ -1,4 +1,4 @@
-import { getTodayISO } from './formatCurrency';
+import { getTodayISO } from './formatCurrency.js';
 
 export const ROUTES = {
   landing: '/',

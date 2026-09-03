@@ -149,7 +149,7 @@ export default function MovementForm({
   const expenseBlocked = type === 'expense' && amountNum > 0 && !expenseValidation.allowed;
   const saveBlockReason = expenseBlocked ? expenseBlockMessage(expenseValidation) : '';
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
     if (!validate()) {
@@ -167,32 +167,33 @@ export default function MovementForm({
     };
 
     setIsSubmitting(true);
+    try {
+      const result = isEditing
+        ? await updateMovement(initialData.id, movementData)
+        : await addMovement(movementData);
 
-    let result;
-    if (isEditing) {
-      result = updateMovement(initialData.id, movementData);
-    } else {
-      result = addMovement(movementData);
-    }
+      if (result.success) {
+        onSuccess?.(type);
+        return;
+      }
 
-    if (result.success) {
-      onSuccess?.(type);
-      return;
-    }
-
-    setIsSubmitting(false);
-    if (result.reason === 'exceeds_balance') {
-      setFormAlert(
-        `No puedes registrar este gasto. El máximo disponible ese mes es ${formatCurrency(result.maxAllowed)}.`
-      );
-    } else if (result.reason === 'no_income') {
-      setFormAlert('Registra primero un ingreso en ese mes para poder registrar gastos.');
-    } else if (result.reason === 'would_exceed_expenses') {
-      setFormAlert(
-        'Este cambio dejaría los gastos de ese mes por encima de los ingresos. Ajusta el monto o los egresos primero.'
-      );
-    } else {
-      setFormAlert('No se pudo guardar. Revisa los datos e inténtalo de nuevo.');
+      setIsSubmitting(false);
+      if (result.reason === 'exceeds_balance') {
+        setFormAlert(
+          `No puedes registrar este gasto. El máximo disponible ese mes es ${formatCurrency(result.maxAllowed)}.`
+        );
+      } else if (result.reason === 'no_income') {
+        setFormAlert('Registra primero un ingreso en ese mes para poder registrar gastos.');
+      } else if (result.reason === 'would_exceed_expenses') {
+        setFormAlert(
+          'Este cambio dejaría los gastos de ese mes por encima de los ingresos. Ajusta el monto o los egresos primero.'
+        );
+      } else {
+        setFormAlert(result.error || 'No se pudo guardar. Revisa los datos e inténtalo de nuevo.');
+      }
+    } catch {
+      setIsSubmitting(false);
+      setFormAlert('No hay conexión con el servidor. Inténtalo de nuevo.');
     }
   };
 
