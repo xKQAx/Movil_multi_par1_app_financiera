@@ -9,10 +9,10 @@ function daysLabel(count) {
 }
 
 export default function MonthPace() {
-  const { totalIncome, totalExpenses, balance } = useFinance();
+  const { totalIncome, totalExpenses, balance, activeMonth, activeYear } = useFinance();
   const pace = useMemo(
-    () => getMonthPace({ totalIncome, totalExpenses, balance }),
-    [totalIncome, totalExpenses, balance]
+    () => getMonthPace({ totalIncome, totalExpenses, balance, month: activeMonth, year: activeYear }),
+    [totalIncome, totalExpenses, balance, activeMonth, activeYear]
   );
 
   if (!pace.hasIncome) {
@@ -33,7 +33,11 @@ export default function MonthPace() {
     : 'month-pace__hint month-pace__hint--ok';
 
   let hint;
-  if (pace.avgDailyExpense <= 0) {
+  if (pace.isPastMonth) {
+    hint = pace.willRunShort
+      ? 'En ese mes el gasto diario no habría alcanzado hasta fin de mes.'
+      : 'Mes cerrado: el saldo ya no cambia con el paso de los días.';
+  } else if (pace.avgDailyExpense <= 0) {
     hint = 'Aún no hay gastos: el cupo diario reparte el saldo en los días que quedan.';
   } else if (pace.willRunShort) {
     hint = `Si sigues gastando ${formatCurrency(pace.avgDailyExpense)} al día, el saldo no alcanzaría antes de fin de mes.`;
@@ -50,12 +54,18 @@ export default function MonthPace() {
       <div className="month-pace__grid">
         <div className="month-pace__item">
           <span className="month-pace__label">Días restantes</span>
-          <span className="month-pace__value">{daysLabel(pace.daysRemaining)}</span>
+          <span className="month-pace__value">
+            {pace.daysRemaining > 0 ? daysLabel(pace.daysRemaining) : 'Mes cerrado'}
+          </span>
         </div>
         <div className="month-pace__item">
           <span className="month-pace__label">Cupo diario</span>
           <span className="month-pace__value month-pace__value--income">
-            {pace.dailyAllowance != null ? formatCurrency(pace.dailyAllowance) : 'Sin saldo'}
+            {pace.daysRemaining === 0
+              ? '—'
+              : pace.dailyAllowance != null
+                ? formatCurrency(pace.dailyAllowance)
+                : 'Sin saldo'}
           </span>
         </div>
         <div className="month-pace__item">

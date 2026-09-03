@@ -15,7 +15,7 @@ import {
   sortMovementsByDate,
   BUDGET_STATUS,
 } from '../utils/financeRules';
-import { getMonthYearFromDate } from '../utils/formatCurrency';
+import { getCalendarMonth, getMonthYearFromDate, isMonthAfter, isSameMonth, shiftMonthYear } from '../utils/formatCurrency';
 import {
   DEFAULT_PREFERENCES,
   EMPTY_MOVEMENTS,
@@ -45,6 +45,7 @@ export function FinanceProvider({ children }) {
   );
 
   const [notificationPermission, setNotificationPermission] = useState(readNotificationPermission);
+  const [viewMonth, setViewMonth] = useState(getCalendarMonth);
   const osNotifySentRef = useRef({});
   const persistPrefTimer = useRef(null);
 
@@ -93,10 +94,36 @@ export function FinanceProvider({ children }) {
 
   const isLoading = Boolean(user?.userId) && hydratedUserId !== user.userId && !loadError;
 
-  const now = new Date();
-  const activeMonth = now.getMonth();
-  const activeYear = now.getFullYear();
+  const calendar = getCalendarMonth();
+
+  useEffect(() => {
+    setViewMonth(getCalendarMonth());
+  }, [user?.userId]);
+
+  useEffect(() => {
+    const cal = getCalendarMonth();
+    setViewMonth((prev) => (
+      isMonthAfter(prev.month, prev.year, cal.month, cal.year) ? cal : prev
+    ));
+  }, [calendar.month, calendar.year]);
+
+  const activeMonth = viewMonth.month;
+  const activeYear = viewMonth.year;
+  const isCurrentMonth = isSameMonth(activeMonth, activeYear, calendar.month, calendar.year);
   const monthKey = `${activeYear}-${activeMonth}`;
+
+  const goToPreviousMonth = useCallback(() => {
+    setViewMonth((prev) => shiftMonthYear(prev.month, prev.year, -1));
+  }, []);
+
+  const goToNextMonth = useCallback(() => {
+    setViewMonth((prev) => {
+      const next = shiftMonthYear(prev.month, prev.year, 1);
+      const cal = getCalendarMonth();
+      if (isMonthAfter(next.month, next.year, cal.month, cal.year)) return prev;
+      return next;
+    });
+  }, []);
 
   const totalIncome = useMemo(
     () => calculateIncome(movements, activeMonth, activeYear),
@@ -138,7 +165,7 @@ export function FinanceProvider({ children }) {
     try {
       new Notification('Presupuesto crítico', {
         body: 'Te queda menos del 10% de tu presupuesto mensual.',
-        icon: '/vite.svg',
+        icon: '/pwa-192x192.png',
       });
       return true;
     } catch {
@@ -335,11 +362,14 @@ export function FinanceProvider({ children }) {
       expensesByCategory,
       activeMonth,
       activeYear,
+      isCurrentMonth,
       monthKey,
       notificationPermission,
       isLoading,
       loadError,
       reload,
+      goToPreviousMonth,
+      goToNextMonth,
       addMovement,
       updateMovement,
       deleteMovement,
@@ -361,11 +391,14 @@ export function FinanceProvider({ children }) {
       expensesByCategory,
       activeMonth,
       activeYear,
+      isCurrentMonth,
       monthKey,
       notificationPermission,
       isLoading,
       loadError,
       reload,
+      goToPreviousMonth,
+      goToNextMonth,
       addMovement,
       updateMovement,
       deleteMovement,

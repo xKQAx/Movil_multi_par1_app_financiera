@@ -1,7 +1,7 @@
 import { formatCurrency } from '../utils/formatCurrency';
 import { useFinance } from '../context/FinanceContext';
 
-/** Totales del mes calendario actual (Dashboard y listado). */
+/** Totales del mes seleccionado (Dashboard y listado). */
 export default function MonthSummary({ title = 'Resumen del mes' }) {
   const { totalIncome, totalExpenses, balance } = useFinance();
 

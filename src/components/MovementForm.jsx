@@ -5,10 +5,12 @@ import { formatCurrency, formatMonthYear, getMonthYearFromDate, getTodayISO, isV
 import { categoryForType } from '../utils/speechParser';
 import { focusFirstInvalid } from '../utils/formFocus';
 import VoiceCapture from './VoiceCapture';
+import CurrencyInput from './CurrencyInput';
 
 function amountToInput(amount) {
   if (amount === null || amount === undefined || amount === '') return '';
-  return String(amount);
+  const n = Number(amount);
+  return Number.isFinite(n) ? Math.trunc(n) : '';
 }
 
 function expenseBlockMessage(validation) {
@@ -121,7 +123,7 @@ export default function MovementForm({
       ...prev,
       description: data.description || prev.description,
       category: categoryForType(data.category || prev.category, type),
-      amount: data.amount !== '' && data.amount != null ? String(data.amount) : prev.amount,
+      amount: data.amount !== '' && data.amount != null ? amountToInput(data.amount) : prev.amount,
     }));
     setErrors({});
     if (result.detectedType && result.detectedType !== type) {
@@ -270,17 +272,14 @@ export default function MovementForm({
 
       <div className="form-group">
         <label htmlFor="amount">Monto</label>
-        <input
-          ref={amountInputRef}
+        <CurrencyInput
           id="amount"
-          type="number"
-          min="1"
-          step="1"
+          inputRef={amountInputRef}
           value={form.amount}
-          onChange={(e) => handleChange('amount', e.target.value)}
+          onChange={(pesos) => handleChange('amount', pesos)}
           placeholder="0"
-          aria-invalid={!!errors.amount}
-          aria-describedby={errors.amount ? 'amount-error' : undefined}
+          invalid={!!errors.amount}
+          describedBy={errors.amount ? 'amount-error' : undefined}
         />
         {errors.amount && <p id="amount-error" className="form-error">{errors.amount}</p>}
       </div>

@@ -99,7 +99,7 @@ export default function Movements() {
 
   return (
     <div className="page movements-page">
-      <Header subtitle="Movimientos" />
+      <Header subtitle="Movimientos" showMonthNav />
 
       {monthMovements.length === 0 ? (
         <div className="movements-empty">

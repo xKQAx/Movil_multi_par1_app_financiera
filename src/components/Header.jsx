@@ -1,21 +1,20 @@
 import { useFinance } from '../context/FinanceContext';
-import { formatMonthYear } from '../utils/formatCurrency';
 import LogoutButton from './LogoutButton';
+import MonthSwitcher from './MonthSwitcher';
 
-export default function Header({ subtitle }) {
-  const { preferences, activeMonth, activeYear } = useFinance();
-  const monthLabel =
-    preferences.activeMonthName || formatMonthYear(activeMonth, activeYear);
+export default function Header({ subtitle, showMonthNav = false }) {
+  const { preferences } = useFinance();
 
   return (
     <header className="header">
       <div className="header__row">
         <div className="header__text">
           <p className="header__greeting">Hola, {preferences.name || 'Estudiante'} 👋</p>
-          <h1 className="header__title">{subtitle || monthLabel}</h1>
+          {subtitle ? <h1 className="header__title">{subtitle}</h1> : null}
         </div>
         <LogoutButton variant="header" />
       </div>
+      {showMonthNav && <MonthSwitcher asTitle={!subtitle} />}
     </header>
   );
 }

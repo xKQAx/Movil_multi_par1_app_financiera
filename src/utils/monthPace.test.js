@@ -91,5 +91,21 @@ test('último día del mes: 1 día restante', () => {
   assert.equal(pace.dailyAllowance, 60000);
 });
 
+test('mes anterior: cerrado, promedio sobre el mes completo', () => {
+  const pace = getMonthPace({
+    totalIncome: 300000,
+    totalExpenses: 93000,
+    month: 7,
+    year: 2026,
+    now: new Date(2026, 8, 15),
+  });
+  assert.equal(pace.daysInMonth, 31);
+  assert.equal(pace.daysElapsed, 31);
+  assert.equal(pace.daysRemaining, 0);
+  assert.equal(pace.dailyAllowance, null);
+  assert.equal(pace.isPastMonth, true);
+  assert.equal(pace.avgDailyExpense, 3000);
+});
+
 console.log(`\n${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);

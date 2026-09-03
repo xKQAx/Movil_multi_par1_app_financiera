@@ -3,6 +3,7 @@ import { Moon, Sun } from 'lucide-react';
 import Header from '../components/Header';
 import LogoutButton from '../components/LogoutButton';
 import ConfirmDialog from '../components/ConfirmDialog';
+import InstallAppCard from '../components/InstallAppCard';
 import { useFinance } from '../context/FinanceContext';
 import { useAuth } from '../context/AuthContext';
 import { ACCENT_COLORS } from '../utils/constants';
@@ -24,26 +25,6 @@ const ACCENT_OPTIONS = [
   { id: 'blue', label: 'Azul' },
   { id: 'green', label: 'Verde' },
   { id: 'purple', label: 'Morado' },
-];
-
-/** Complementos útiles para el parcial que aún no están en la app. */
-const COMPLEMENTARY_IMPROVEMENTS = [
-  {
-    title: 'App instalable',
-    text: 'PWA con icono en el celular y avisos aunque cierres la pestaña.',
-  },
-  {
-    title: 'Historial por meses',
-    text: 'Cambiar de mes y revisar meses anteriores, no solo el calendario actual.',
-  },
-  {
-    title: 'Exportar movimientos',
-    text: 'Descargar el mes en CSV o PDF para Excel o una entrega.',
-  },
-  {
-    title: 'Tope por categoría',
-    text: 'Límite propio en alimentación, transporte y demás, con alerta al acercarte.',
-  },
 ];
 
 export default function Settings() {
@@ -136,8 +117,13 @@ export default function Settings() {
             onChange={(e) => handleChange('activeMonthName', e.target.value)}
             placeholder='Ej: "Mes del viaje 🌎"'
           />
+          <p className="text-muted settings-month-hint">
+            Solo se muestra cuando estás en el mes actual.
+          </p>
         </div>
       </section>
+
+      <InstallAppCard />
 
       <section className="settings-section card">
         <h2 className="section-title">Notificaciones</h2>
@@ -223,46 +209,6 @@ export default function Settings() {
       <section className="settings-section card">
         <h2 className="section-title">Sesión</h2>
         <LogoutButton variant="block" />
-      </section>
-
-      <section className="settings-section card">
-        <h2 className="section-title">Dónde ver tus datos (Neon)</h2>
-        <p className="text-muted">
-          Un registro 409 (correo ya existe) significa que las tablas <strong>sí están</strong>
-          en la base de la connection string. Si la consola de Neon se ve vacía, casi siempre
-          estás en otro proyecto, otra rama o no expandiste el schema <code>public</code>.
-        </p>
-        <ol className="task-list">
-          <li>Abre el <strong>mismo</strong> proyecto Neon cuya connection string está en <code>DATABASE_URL</code>.</li>
-          <li>Elige la rama que coincida (a menudo <code>production</code> o <code>main</code>).</li>
-          <li>Database <code>neondb</code> (o la que aparece en la connection string).</li>
-          <li>Schema <strong>public</strong>: tablas <code>users</code>, <code>preferences</code>, <code>movements</code>, <code>schema_migrations</code>.</li>
-          <li>Pulsa refresh. Las tablas están en <strong>Tables</strong>, no en “Auth” de Neon (Neon no es Supabase Auth).</li>
-        </ol>
-        <p className="text-muted settings-console-note">
-          En local: <code>npm run db:tables</code> confirma las tablas contra tu <code>.env</code>
-          (cuenta usuarios, sin listar correos). Si Vercel y local deben compartir la misma
-          cuenta, usa la misma <code>DATABASE_URL</code> y, si hace falta, <code>npm run migrate</code>.
-        </p>
-      </section>
-
-      <section className="settings-section card improvements-card">
-        <h2 className="section-title">Mejoras complementarias</h2>
-        <p className="text-muted">
-          La cuenta, los movimientos y el tema ya viven en Neon (Postgres) a través de la API en
-          Vercel. Estos cuatro extras vendrían después.
-        </p>
-        <ol className="task-list">
-          {COMPLEMENTARY_IMPROVEMENTS.map((item) => (
-            <li key={item.title}>
-              <strong>{item.title}.</strong> {item.text}
-            </li>
-          ))}
-        </ol>
-        <p className="text-muted settings-console-note">
-          Un error de consola con <code>startTime</code> / <code>reportAllChanges</code> suele
-          venir de una extensión o DevTools (web-vitals), no de esta app, y no la rompe.
-        </p>
       </section>
 
       <ConfirmDialog

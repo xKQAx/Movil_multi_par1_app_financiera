@@ -19,7 +19,7 @@ export default function Dashboard() {
 
   return (
     <div className="page dashboard">
-      <Header />
+      <Header showMonthNav />
 
       <div className="dashboard__hero">
         <BalanceCard />
@@ -73,7 +73,7 @@ export default function Dashboard() {
       </section>
       {noIncome && (
         <p id="quick-expense-hint" className="text-muted quick-actions__hint">
-          El gasto está bloqueado hasta que registres un ingreso este mes.
+          El gasto está bloqueado hasta que registres un ingreso en el mes de la fecha.
         </p>
       )}
 
