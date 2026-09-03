@@ -1,4 +1,5 @@
 import { useFinance } from '../context/FinanceContext';
+import HeaderInstallButton from './HeaderInstallButton';
 import LogoutButton from './LogoutButton';
 import MonthSwitcher from './MonthSwitcher';
 
@@ -12,7 +13,10 @@ export default function Header({ subtitle, showMonthNav = false }) {
           <p className="header__greeting">Hola, {preferences.name || 'Estudiante'} 👋</p>
           {subtitle ? <h1 className="header__title">{subtitle}</h1> : null}
         </div>
-        <LogoutButton variant="header" />
+        <div className="header__actions">
+          <HeaderInstallButton />
+          <LogoutButton variant="header" />
+        </div>
       </div>
       {showMonthNav && <MonthSwitcher asTitle={!subtitle} />}
     </header>

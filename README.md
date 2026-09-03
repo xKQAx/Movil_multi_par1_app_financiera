@@ -39,17 +39,9 @@ Diagnóstico en el deploy: `GET /api/health` responde `{ "db": true/false, "jwtC
 
 Las cuentas antiguas de `localStorage` **no se copian** a Neon: crea la cuenta de nuevo en `/registro`.
 
-## No veo tablas en Neon
+## Base de datos (desarrolladores)
 
-Un **409** al registrar (“Ya existe una cuenta”) prueba que las tablas **sí existen** en la base a la que apunta Vercel. Si la UI de Neon se ve vacía, casi siempre estás en otro sitio:
-
-1. Consola Neon → el **mismo** proyecto cuya connection string está en `DATABASE_URL`.
-2. Rama que coincida (a menudo `production` o `main`, no solo `development`).
-3. Database `neondb` (o la del connection string).
-4. Schema **public**: tablas `users`, `preferences`, `movements`, `schema_migrations`.
-5. Botón refresh. Las tablas aparecen en **Tables**, no en “Auth” de Neon (Neon no es Supabase Auth).
-
-En local, `npm run db:tables` lista esas tablas y un `count(*)` de usuarios **sin imprimir correos**, contra tu `.env`.
+`npm run migrate` crea las tablas. `npm run db:tables` confirma que existen (sin imprimir correos). La app **no** muestra instrucciones de Neon en Ajustes.
 
 ## Funcionalidades
 
@@ -129,16 +121,9 @@ Ejemplos: “Gasté ocho mil pesos en transporte”, “Recibí 200 mil de mesad
 
 La primera vez **descarga el reconocedor (mejor modelo, ~75 MB)** desde Hugging Face (hace falta internet esa vez) y lo deja en la caché del navegador. Las siguientes veces reutiliza esa caché. Si no hay WebGPU, corre en WASM (más lento; la UI lo avisa). Puedes escribir el movimiento a mano si niegas el micrófono o si la transcripción falla. El botón pasa a **Reintentar**.
 
-## Mejoras complementarias
+## Instalar la app (PWA)
 
-La misma lista aparece en **Ajustes**. La cuenta en la nube (Neon + Vercel) **ya está**. Quedan extras:
-
-1. App instalable (PWA) y avisos en segundo plano
-2. Historial por meses (cambiar de mes, no solo el actual)
-3. Exportar movimientos (CSV / PDF)
-4. Tope de presupuesto por categoría, con alerta propia
-
-Si en la consola ves `Cannot read properties of undefined (reading 'startTime')` en `reportAllChanges`, suele ser una extensión o DevTools (web-vitals / CLS), no esta app: no hay `PerformanceObserver` ni `web-vitals` en el código.
+En **Ajustes → Instalar app** hay instrucciones para Chrome (computador y Android) y Safari (iPhone). Hace falta un **redeploy en Vercel** para que el dominio de producción registre el service worker. En local, `npm run dev:full` también lo registra.
 
 ## Tecnologías
 

@@ -1,19 +1,22 @@
-const PESOS_FORMATTER = new Intl.NumberFormat('es-CO', {
-  maximumFractionDigits: 0,
-  minimumFractionDigits: 0,
-});
-
 const MAX_PESOS_DIGITS = 12;
 
-/** Formatea montos en pesos colombianos (COP), sin centavos. */
+/** Miles con punto ASCII (es-CO). No usa Intl: en algunos navegadores el agrupador es un espacio invisible. */
+function groupThousands(digits) {
+  return String(digits).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+function toPesosInt(value) {
+  if (value === '' || value === null || value === undefined) return null;
+  const n = Number(value);
+  if (!Number.isFinite(n)) return null;
+  return Math.trunc(n);
+}
+
+/** Formatea montos en pesos colombianos, sin centavos: `$ 800.000`. */
 export function formatCurrency(amount) {
-  const value = Number(amount) || 0;
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
+  const value = toPesosInt(amount) ?? 0;
+  const grouped = groupThousands(Math.abs(value));
+  return `${value < 0 ? '-' : ''}$ ${grouped}`;
 }
 
 /**
@@ -31,10 +34,15 @@ export function parsePesosInput(raw) {
 
 /** Separador de miles es-CO para el input: 800000 → "800.000". */
 export function formatPesosInput(value) {
-  if (value === '' || value === null || value === undefined) return '';
-  const n = Number(value);
-  if (!Number.isFinite(n)) return '';
-  return PESOS_FORMATTER.format(Math.trunc(Math.abs(n)));
+  const n = toPesosInt(value);
+  if (n === null) return '';
+  return groupThousands(Math.abs(n));
+}
+
+/** Valor visible del campo monto: `$ 800.000`. */
+export function formatPesosField(value) {
+  const grouped = formatPesosInput(value);
+  return grouped ? `$ ${grouped}` : '';
 }
 
 /** Desplaza un mes (delta ±1, ±2…). */

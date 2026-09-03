@@ -6,23 +6,26 @@ function readStandalone() {
   return displayStandalone || Boolean(window.navigator.standalone);
 }
 
-function readIosSafari() {
-  if (typeof navigator === 'undefined') return false;
+function readPlatform() {
+  if (typeof navigator === 'undefined') {
+    return { isIos: false, isAndroid: false, isDesktop: true };
+  }
   const ua = navigator.userAgent || '';
   const iOSDevice = /iPad|iPhone|iPod/.test(ua);
   const iPadOs = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
-  const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
-  return (iOSDevice || iPadOs) && isSafari;
+  const isIos = iOSDevice || iPadOs;
+  const isAndroid = /Android/i.test(ua);
+  return { isIos, isAndroid, isDesktop: !isIos && !isAndroid };
 }
 
 /**
- * Captura beforeinstallprompt (Android/Chrome) e iOS Safari.
- * El SW no interviene aquí; solo UI de instalación.
+ * Instalación PWA: captura beforeinstallprompt si existe, pero la UI
+ * no espera ese evento (Chrome a menudo no lo dispara hasta tener SW activo).
  */
 export function useInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [installed, setInstalled] = useState(readStandalone);
-  const [isIos] = useState(readIosSafari);
+  const [platform] = useState(readPlatform);
 
   useEffect(() => {
     const onPrompt = (event) => {
@@ -33,11 +36,16 @@ export function useInstallPrompt() {
       setInstalled(true);
       setDeferredPrompt(null);
     };
+    const media = window.matchMedia('(display-mode: standalone)');
+    const onDisplayMode = () => setInstalled(readStandalone());
+
     window.addEventListener('beforeinstallprompt', onPrompt);
     window.addEventListener('appinstalled', onInstalled);
+    media.addEventListener?.('change', onDisplayMode);
     return () => {
       window.removeEventListener('beforeinstallprompt', onPrompt);
       window.removeEventListener('appinstalled', onInstalled);
+      media.removeEventListener?.('change', onDisplayMode);
     };
   }, []);
 
@@ -52,7 +60,9 @@ export function useInstallPrompt() {
   return {
     canInstall: Boolean(deferredPrompt) && !installed,
     promptInstall,
-    isIos,
+    isIos: platform.isIos,
+    isAndroid: platform.isAndroid,
+    isDesktop: platform.isDesktop,
     isStandalone: installed,
   };
 }

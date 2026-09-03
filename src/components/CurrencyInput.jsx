@@ -1,8 +1,8 @@
-import { formatPesosInput, parsePesosInput } from '../utils/formatCurrency';
+import { formatPesosField, parsePesosInput } from '../utils/formatCurrency';
 
 /**
- * Input de pesos enteros con miles es-CO (800.000).
- * El padre guarda un entero o '' ; al persistir sigue siendo pesos sin centavos.
+ * Input de pesos enteros. El value controlado es un entero (o '');
+ * lo que se VE es `$ 800.000` (miles es-CO, sin decimales).
  */
 export default function CurrencyInput({
   id,
@@ -14,25 +14,26 @@ export default function CurrencyInput({
   describedBy,
   inputRef,
 }) {
+  const commit = (raw) => {
+    onChange(parsePesosInput(raw));
+  };
+
   return (
-    <div className="currency-input">
-      <span className="currency-input__prefix" aria-hidden="true">
-        $
-      </span>
-      <input
-        ref={inputRef}
-        id={id}
-        type="text"
-        inputMode="numeric"
-        autoComplete="off"
-        enterKeyHint="done"
-        placeholder={placeholder}
-        value={formatPesosInput(value)}
-        onChange={(event) => onChange(parsePesosInput(event.target.value))}
-        disabled={disabled}
-        aria-invalid={invalid}
-        aria-describedby={describedBy}
-      />
-    </div>
+    <input
+      ref={inputRef}
+      id={id}
+      className="currency-field"
+      type="text"
+      inputMode="numeric"
+      autoComplete="off"
+      enterKeyHint="done"
+      placeholder={placeholder}
+      value={formatPesosField(value)}
+      onChange={(event) => commit(event.target.value)}
+      onBlur={(event) => commit(event.target.value)}
+      disabled={disabled}
+      aria-invalid={invalid}
+      aria-describedby={describedBy}
+    />
   );
 }

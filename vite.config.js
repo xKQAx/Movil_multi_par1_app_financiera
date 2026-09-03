@@ -10,7 +10,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      injectRegister: 'auto',
+      injectRegister: false,
       includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png'],
       manifest: {
         name: 'Control Financiero',
@@ -18,6 +18,7 @@ export default defineConfig({
         description: 'Control financiero mensual para estudiantes universitarios',
         start_url: '/',
         scope: '/',
+        id: '/',
         display: 'standalone',
         background_color: '#ffffff',
         theme_color: '#3b82f6',
@@ -34,6 +35,16 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
+            handler: 'NetworkOnly',
+          },
+        ],
+      },
+      devOptions: {
+        enabled: true,
+        type: 'module',
       },
     }),
   ],

@@ -5,6 +5,7 @@
 import assert from 'node:assert/strict';
 import {
   formatCurrency,
+  formatPesosField,
   formatPesosInput,
   parsePesosInput,
   shiftMonthYear,
@@ -29,15 +30,22 @@ function test(name, fn) {
 }
 
 test('formatCurrency no muestra centavos', () => {
-  assert.match(formatCurrency(800000), /800\.000/);
-  assert.match(formatCurrency(1500), /1\.500/);
+  assert.equal(formatCurrency(800000), '$ 800.000');
+  assert.equal(formatCurrency(1500), '$ 1.500');
   assert.doesNotMatch(formatCurrency(1500), /1\.500,\d/);
 });
 
-test('formatPesosInput usa miles es-CO', () => {
+test('formatPesosInput usa miles es-CO con punto visible', () => {
   assert.equal(formatPesosInput(800000), '800.000');
   assert.equal(formatPesosInput(''), '');
   assert.equal(formatPesosInput(0), '0');
+  assert.equal(formatPesosInput(8000), '8.000');
+});
+
+test('formatPesosField incluye símbolo y miles mientras se escribe', () => {
+  assert.equal(formatPesosField(800000), '$ 800.000');
+  assert.equal(formatPesosField(8), '$ 8');
+  assert.equal(formatPesosField(''), '');
 });
 
 test('parsePesosInput acepta dígitos, puntos y símbolo $', () => {
